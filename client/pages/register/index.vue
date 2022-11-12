@@ -1,7 +1,7 @@
 <template>
   <div>
     <GuestLayout>
-      <h1>Prisijungimo langas</h1>
+      <h1>Registracijos langas</h1>
     </GuestLayout>
   </div>
 </template>
