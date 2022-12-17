@@ -7,6 +7,13 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+type Sport string
+
+const (
+	SportBasketball Sport = "basketball"
+	SportFootball   Sport = "football"
+)
+
 type Winner string
 
 const (
@@ -31,6 +38,7 @@ type Event struct {
 	UUID       uuid.UUID
 	Name       string
 	Selections []EventSelection
+	Sport      Sport
 	BeginsAt   time.Time
 	Finished   bool
 	HomeTeam   Team

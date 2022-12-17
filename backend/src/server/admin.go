@@ -16,6 +16,7 @@ import (
 
 type newBetEvent struct {
 	Name       string `json:"name"`
+	Sport      string `json:"sport"`
 	Selections []struct {
 		Name     string          `json:"name"`
 		OddsHome decimal.Decimal `json:"odds_home"`
@@ -52,6 +53,7 @@ type betEvent struct {
 	UUID       uuid.UUID           `json:"uuid"`
 	Name       string              `json:"name"`
 	Selections []betEventSelection `json:"selections"`
+	Sport      string              `json:"sport"`
 	BeginsAt   time.Time           `json:"begins_at"`
 	Finished   bool                `json:"finished"`
 	HomeTeam   betEventTeam        `json:"home_team"`
@@ -106,6 +108,7 @@ func betEventView(e bet.Event) betEvent {
 		UUID:       e.UUID,
 		Name:       e.Name,
 		Selections: selections,
+		Sport:      string(e.Sport),
 		BeginsAt:   e.BeginsAt,
 		Finished:   e.Finished,
 		HomeTeam:   home,
@@ -446,6 +449,7 @@ func (s *Server) createEvent(w http.ResponseWriter, r *http.Request) {
 	ev := bet.Event{
 		UUID:     uuid.New(),
 		Name:     newEvent.Name,
+		Sport:    bet.Sport(newEvent.Sport),
 		BeginsAt: newEvent.BeginsAt,
 	}
 

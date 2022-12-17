@@ -61,10 +61,12 @@ CREATE TABLE IF NOT EXISTS bet_event (
 	name TEXT NOT NULL,
 	begins_at TIMESTAMP NOT NULL,
 	finished BOOLEAN NOT NULL,
+	sport_name TEXT NOT NULL,
 
 	home_team_uuid TEXT NOT NULL,
 	away_team_uuid TEXT NOT NULL,
 
+	CONSTRAINT fk_sport_sport_name FOREIGN KEY(sport_name) REFERENCES sport(name),
 	CONSTRAINT fk_home_team_uuid_team_uuid FOREIGN KEY(home_team_uuid) REFERENCES team(uuid),
 	CONSTRAINT fk_away_team_uuid_team_uuid FOREIGN KEY(away_team_uuid) REFERENCES team(uuid)
 );
@@ -92,6 +94,12 @@ CREATE TABLE IF NOT EXISTS team_player (
 
 	CONSTRAINT fk_team_uuid_team_uuid FOREIGN KEY(team_uuid) REFERENCES team(uuid)
 );
+
+CREATE TABLE IF NOT EXISTS sport (
+	name TEXT PRIMARY KEY NOT NULL
+);
+
+INSERT INTO sport VALUES ("football"), ("basketball");
 
 -- +migrate Down
 DROP TABLE IF EXISTS user;

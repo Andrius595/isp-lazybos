@@ -13,6 +13,7 @@ import (
 type Event struct {
 	UUID         uuid.UUID `db:"betev.uuid"`
 	Name         string    `db:"betev.name"`
+	Sport        string    `db:"betev.sport_name"`
 	BeginsAt     time.Time `db:"betev.begins_at"`
 	Finished     bool      `db:"betev.finished"`
 	HomeTeamUUID uuid.UUID `db:"betev.home_team_uuid"`
@@ -43,6 +44,7 @@ func (d *DB) InsertEvent(ctx context.Context, e sq.ExecerContext, ev Event) erro
 	b := sq.Insert("bet_event").SetMap(map[string]interface{}{
 		"uuid":           ev.UUID,
 		"name":           ev.Name,
+		"sport_name":     ev.Sport,
 		"begins_at":      ev.BeginsAt,
 		"finished":       ev.Finished,
 		"home_team_uuid": ev.HomeTeamUUID,
@@ -155,6 +157,7 @@ func (d *DB) FetchPlayersByTeam(ctx context.Context, q sq.QueryerContext, id uui
 func eventQuery(b sq.SelectBuilder, prefix string) sq.SelectBuilder {
 	return b.Columns(
 		column(prefix, "uuid"),
+		column(prefix, "sport_name"),
 		column(prefix, "name"),
 		column(prefix, "begins_at"),
 		column(prefix, "finished"),

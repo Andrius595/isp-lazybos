@@ -366,6 +366,7 @@ func (a *serverDBAdapter) FetchEvents(ctx context.Context) ([]bet.Event, error) 
 		ev := bet.Event{
 			UUID:       evs[i].UUID,
 			Name:       evs[i].Name,
+			Sport:      bet.Sport(evs[i].Sport),
 			Selections: decodedSels,
 			BeginsAt:   evs[i].BeginsAt,
 			Finished:   evs[i].Finished,
@@ -499,6 +500,7 @@ func encodeEvent(ev bet.Event) db.Event {
 	return db.Event{
 		UUID:         ev.UUID,
 		Name:         ev.Name,
+		Sport:        string(ev.Sport),
 		BeginsAt:     ev.BeginsAt,
 		Finished:     ev.Finished,
 		HomeTeamUUID: ev.HomeTeam.UUID,
@@ -510,6 +512,7 @@ func decodeEvent(ev db.Event, home bet.Team, away bet.Team) bet.Event {
 	return bet.Event{
 		UUID:     ev.UUID,
 		Name:     ev.Name,
+		Sport:    bet.Sport(ev.Sport),
 		BeginsAt: ev.BeginsAt,
 		Finished: ev.Finished,
 		HomeTeam: home,
