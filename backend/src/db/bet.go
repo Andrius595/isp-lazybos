@@ -220,6 +220,15 @@ func (d *DB) UpdateBet(ctx context.Context, e sq.ExecerContext, bt Bet) error {
 	return err
 }
 
+func (d *DB) UpdateSelection(ctx context.Context, e sq.ExecerContext, sel EventSelection) error {
+	b := sq.Update("event_selection").SetMap(map[string]interface{}{
+		"winner": sel.Winner,
+	}).Where(sq.Eq{"uuid": sel.UUID})
+
+	_, err := sq.ExecContextWith(ctx, e, b)
+	return err
+}
+
 func eventQuery(b sq.SelectBuilder, prefix string) sq.SelectBuilder {
 	return b.Columns(
 		column(prefix, "uuid"),

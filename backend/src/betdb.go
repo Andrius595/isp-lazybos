@@ -79,6 +79,10 @@ func (b *betDBAdapter) UpdateBet(ctx context.Context, bt bet.Bet, u user.BetUser
 	return tx.Commit()
 }
 
+func (b *betDBAdapter) UpdateSelection(ctx context.Context, sel bet.EventSelection) error {
+	return b.db.UpdateSelection(ctx, b.db.NoTX(), encodeSelection(sel, uuid.Nil))
+}
+
 func encodeBet(b bet.Bet) db.Bet {
 	return db.Bet{
 		UUID:            b.UUID,

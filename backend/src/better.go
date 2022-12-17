@@ -63,6 +63,10 @@ func (b *better) ResolveEventSelection(ctx context.Context, sel bet.EventSelecti
 		return err
 	}
 
+	if err := b.db.UpdateSelection(ctx, sel); err != nil {
+		return err
+	}
+
 	for _, bt := range bets {
 		u, ok, err := b.db.FetchBetUserByUUID(ctx, bt.UserUUID)
 		if err != nil {
@@ -90,6 +94,7 @@ func (b *better) ResolveEventSelection(ctx context.Context, sel bet.EventSelecti
 type BetDB interface {
 	FetchBetUserByUUID(context.Context, uuid.UUID) (user.BetUser, bool, error)
 	FetchBetsBySelection(context.Context, uuid.UUID) ([]bet.Bet, error)
+	UpdateSelection(context.Context, bet.EventSelection) error
 	InsertBet(context.Context, bet.Bet, user.BetUser) error
 	UpdateBet(context.Context, bet.Bet, user.BetUser) error
 }
