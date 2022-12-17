@@ -86,3 +86,40 @@ func (d *DB) InsertTeamPlayer(ctx context.Context, e sq.ExecerContext, tp TeamPl
 	_, err := sq.ExecContextWith(ctx, e, b)
 	return err
 }
+
+func (d *DB) eventQuery(b sq.SelectBuilder, prefix string) sq.SelectBuilder {
+	return b.Columns(
+		column(prefix, "uuid"),
+		column(prefix, "name"),
+		column(prefix, "begins_at"),
+		column(prefix, "finished"),
+		column(prefix, "home_team_uuid"),
+		column(prefix, "away_team_uuid"),
+	)
+}
+
+func (d *DB) selectionQuery(b sq.SelectBuilder, prefix string) sq.SelectBuilder {
+	return b.Columns(
+		column(prefix, "uuid"),
+		column(prefix, "name"),
+		column(prefix, "odds_home"),
+		column(prefix, "odds_away"),
+		column(prefix, "winner"),
+		column(prefix, "event_uuid"),
+	)
+}
+
+func (d *DB) teamQuery(b sq.SelectBuilder, prefix string) sq.SelectBuilder {
+	return b.Columns(
+		column(prefix, "uuid"),
+		column(prefix, "name"),
+	)
+}
+
+func (d *DB) teamPlayerQuery(b sq.SelectBuilder, prefix string) sq.SelectBuilder {
+	return b.Columns(
+		column(prefix, "uuid"),
+		column(prefix, "name"),
+		column(prefix, "team_uuid"),
+	)
+}

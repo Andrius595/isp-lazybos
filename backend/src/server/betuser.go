@@ -121,10 +121,15 @@ func (s *Server) betUserRouter() http.Handler {
 	r.Group(func(r chi.Router) {
 		r.Use(s.sessions.Auth)
 
+		r.Get("/me", s.withBetUser(s.betUserMe))
 		r.Post("/identity-verification", s.withBetUser(s.createVerificationRequest))
 	})
 
 	return r
+}
+
+func (s *Server) betUserMe(w http.ResponseWriter, r *http.Request, bu user.BetUser) {
+	respondJSON(w, http.StatusOK, betUserView(bu))
 }
 
 func (s *Server) registerBetUser(w http.ResponseWriter, r *http.Request) {
