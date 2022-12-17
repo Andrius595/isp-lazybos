@@ -43,5 +43,6 @@ type PurseDB interface {
 
 type BetDB interface {
 	InsertEvent(context.Context, bet.Event) error
+	FetchSelection(context.Context, uuid.UUID) (bet.EventSelection, bool, error)
 	FetchEvents(context.Context) ([]bet.Event, error)
 }
