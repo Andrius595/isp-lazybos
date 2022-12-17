@@ -7,7 +7,7 @@
 </template>
 
 <script setup lang="ts">
-import AuthenticatedLayout from "../layouts/AuthenticatedLayout";
+import AuthenticatedLayout from "../layouts/AuthenticatedLayout.vue";
 import { useRouter } from "vue-router";
 import getRouteUrl from "~/utils/getRouteUrl";
 import Routes from "~/types/routes";
