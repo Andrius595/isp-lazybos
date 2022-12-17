@@ -87,7 +87,22 @@ func (d *DB) InsertTeamPlayer(ctx context.Context, e sq.ExecerContext, tp TeamPl
 	return err
 }
 
-func (d *DB) eventQuery(b sq.SelectBuilder, prefix string) sq.SelectBuilder {
+func (d *DB) FetchEvents(ctx context.Context, q sq.QueryerContext) ([]Event, error) {
+	b := sq.Select()
+
+	b = eventQuery(b, "betev").From("bet_event AS betev")
+	qr, _ := b.MustSql()
+
+	var ee []Event
+
+	if err := d.d.SelectContext(ctx, &ee, qr); err != nil {
+		return nil, err
+	}
+
+	return ee, nil
+}
+
+func eventQuery(b sq.SelectBuilder, prefix string) sq.SelectBuilder {
 	return b.Columns(
 		column(prefix, "uuid"),
 		column(prefix, "name"),
@@ -98,7 +113,7 @@ func (d *DB) eventQuery(b sq.SelectBuilder, prefix string) sq.SelectBuilder {
 	)
 }
 
-func (d *DB) selectionQuery(b sq.SelectBuilder, prefix string) sq.SelectBuilder {
+func selectionQuery(b sq.SelectBuilder, prefix string) sq.SelectBuilder {
 	return b.Columns(
 		column(prefix, "uuid"),
 		column(prefix, "name"),
@@ -109,14 +124,14 @@ func (d *DB) selectionQuery(b sq.SelectBuilder, prefix string) sq.SelectBuilder 
 	)
 }
 
-func (d *DB) teamQuery(b sq.SelectBuilder, prefix string) sq.SelectBuilder {
+func teamQuery(b sq.SelectBuilder, prefix string) sq.SelectBuilder {
 	return b.Columns(
 		column(prefix, "uuid"),
 		column(prefix, "name"),
 	)
 }
 
-func (d *DB) teamPlayerQuery(b sq.SelectBuilder, prefix string) sq.SelectBuilder {
+func teamPlayerQuery(b sq.SelectBuilder, prefix string) sq.SelectBuilder {
 	return b.Columns(
 		column(prefix, "uuid"),
 		column(prefix, "name"),

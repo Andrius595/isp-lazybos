@@ -128,11 +128,11 @@ func (d *DB) FetchBetUsers(ctx context.Context, q sq.QueryerContext) ([]BetUser,
 
 	b = betUserQuery(userQuery(b, "usr"), "betusr").From("bet_user AS betusr").InnerJoin("user AS usr ON usr.uuid=betusr.user_uuid")
 
-	qr, args := b.MustSql()
+	qr, _ := b.MustSql()
 
 	var uu []BetUser
 
-	if err := d.d.SelectContext(ctx, &uu, qr, args); err != nil {
+	if err := d.d.SelectContext(ctx, &uu, qr); err != nil {
 		return nil, err
 	}
 
@@ -208,11 +208,11 @@ func (d *DB) FetchIdentityVerifications(ctx context.Context, q sq.QueryerContext
 
 	b = identityVerificatiosQuery(b, "idv").From("identity_verification AS idv")
 
-	qr, args := b.MustSql()
+	qr, _ := b.MustSql()
 
 	var ids []IdentityVerification
 
-	if err := d.d.SelectContext(ctx, &ids, qr, args); err != nil {
+	if err := d.d.SelectContext(ctx, &ids, qr); err != nil {
 		return nil, err
 	}
 
