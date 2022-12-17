@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/cors"
 	"github.com/rs/zerolog"
 	"github.com/swithek/sessionup"
 )
@@ -49,6 +50,14 @@ func (s *Server) Run() error {
 	defer s.log.Info().Msg("HTTP server stopped")
 
 	r := chi.NewRouter()
+
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"https://*", "http://*", "*"},
+		AllowCredentials: true,
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders:   []string{"Link"},
+	}))
 
 	r.Mount("/bet-user", s.betUserRouter())
 	r.Mount("/user", s.userRouter())
