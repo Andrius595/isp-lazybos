@@ -555,7 +555,7 @@ func decodeTeam(t db.Team, pp []bet.Player) bet.Team {
 
 func encodePlayer(tp bet.Player, teamUUID uuid.UUID) db.TeamPlayer {
 	return db.TeamPlayer{
-		UUID:     uuid.New(),
+		UUID:     tp.UUID,
 		TeamUUID: teamUUID,
 		Name:     tp.Name,
 	}
