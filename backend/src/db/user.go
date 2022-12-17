@@ -32,8 +32,8 @@ type IdentityVerification struct {
 	UUID                uuid.UUID `db:"idv.uuid"`
 	UserUUID            uuid.UUID `db:"idv.user_uuid"`
 	Status              string    `db:"idv.status"`
-	IDPhotoBase64       string    `db:"idv.id_photo_base_64"`
-	PortraitPhotoBase64 string    `db:"idv.portrait_photo_base_64"`
+	IDPhotoBase64       string    `db:"idv.id_photo_base64"`
+	PortraitPhotoBase64 string    `db:"idv.portrait_photo_base64"`
 	RespondedAt         time.Time `db:"idv.responded_at"`
 	CreatedAt           time.Time `db:"idv.created_at"`
 }
@@ -124,15 +124,15 @@ func (d *DB) FetchBetUser(ctx context.Context, q sq.QueryerContext, c fetchUserC
 }
 
 func (d *DB) FetchBetUsers(ctx context.Context, q sq.QueryerContext) ([]BetUser, error) {
-	var b sq.SelectBuilder
+	b := sq.Select()
 
 	b = betUserQuery(userQuery(b, "usr"), "betusr").From("bet_user AS betusr").InnerJoin("user AS usr ON usr.uuid=betusr.user_uuid")
 
-	qr, args := b.MustSql()
+	qr, _ := b.MustSql()
 
 	var uu []BetUser
 
-	if err := d.d.SelectContext(ctx, &uu, qr, args); err != nil {
+	if err := d.d.SelectContext(ctx, &uu, qr); err != nil {
 		return nil, err
 	}
 
@@ -140,14 +140,14 @@ func (d *DB) FetchBetUsers(ctx context.Context, q sq.QueryerContext) ([]BetUser,
 }
 
 func (d *DB) FetchUser(ctx context.Context, q sq.QueryerContext, c fetchUserCriteria) (User, bool, error) {
-	var b sq.SelectBuilder
+	b := sq.Select()
 
 	b = c(userQuery(b, "usr").From("user AS usr"), "usr")
 	var u User
 
 	qr, args := b.MustSql()
 
-	err := d.d.GetContext(ctx, &u, qr, args)
+	err := d.d.GetContext(ctx, &u, qr, args...)
 	switch err {
 	case nil:
 		return u, true, nil
@@ -184,7 +184,7 @@ func (db *DB) UpdateIdentityVerification(ctx context.Context, e sq.ExecerContext
 }
 
 func (d *DB) FetchIdentityVerification(ctx context.Context, q sq.QueryerContext, id uuid.UUID) (IdentityVerification, bool, error) {
-	var b sq.SelectBuilder
+	b := sq.Select()
 
 	b = identityVerificatiosQuery(b, "idv").From("identity_verification AS idv").Where(sq.Eq{"idv.uuid": id})
 
@@ -192,7 +192,7 @@ func (d *DB) FetchIdentityVerification(ctx context.Context, q sq.QueryerContext,
 
 	var ver IdentityVerification
 
-	err := d.d.GetContext(ctx, &ver, qr, args)
+	err := d.d.GetContext(ctx, &ver, qr, args...)
 	switch err {
 	case nil:
 		return ver, true, nil
@@ -204,15 +204,15 @@ func (d *DB) FetchIdentityVerification(ctx context.Context, q sq.QueryerContext,
 }
 
 func (d *DB) FetchIdentityVerifications(ctx context.Context, q sq.QueryerContext) ([]IdentityVerification, error) {
-	var b sq.SelectBuilder
+	b := sq.Select()
 
 	b = identityVerificatiosQuery(b, "idv").From("identity_verification AS idv")
 
-	qr, args := b.MustSql()
+	qr, _ := b.MustSql()
 
 	var ids []IdentityVerification
 
-	if err := d.d.SelectContext(ctx, &ids, qr, args); err != nil {
+	if err := d.d.SelectContext(ctx, &ids, qr); err != nil {
 		return nil, err
 	}
 
@@ -240,7 +240,7 @@ func (d *DB) UpdateEmailVerification(ctx context.Context, e sq.ExecerContext, ve
 }
 
 func (d *DB) FetchEmailVerification(ctx context.Context, q sq.QueryerContext, token string) (EmailVerification, bool, error) {
-	var b sq.SelectBuilder
+	b := sq.Select()
 
 	b = emailVerificationQuery(b, "emailver").From("email_verification_token AS emailver").Where(sq.Eq{"emailver.token": token})
 
@@ -248,7 +248,7 @@ func (d *DB) FetchEmailVerification(ctx context.Context, q sq.QueryerContext, to
 
 	var ver EmailVerification
 
-	err := d.d.GetContext(ctx, &ver, qr, args)
+	err := d.d.GetContext(ctx, &ver, qr, args...)
 	switch err {
 	case nil:
 		return ver, true, nil

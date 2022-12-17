@@ -91,7 +91,7 @@ func (id newIdentityVerification) Validate() error {
 
 type identityVerification struct {
 	UUID                uuid.UUID                       `json:"uuid"`
-	UserUUID            uuid.UUID                       `json:"user_uuid"`
+	User                betUser                         `json:"user"`
 	Status              user.IdentityVerificationStatus `json:"status"`
 	IDPhotoBase64       string                          `json:"id_photo_base_64"`
 	PortraitPhotoBase64 string                          `json:"portrait_photo_base_64"`
@@ -99,10 +99,10 @@ type identityVerification struct {
 	CreatedAt           time.Time                       `json:"created_at"`
 }
 
-func identityVerificationView(id user.IdentityVerification) identityVerification {
+func identityVerificationView(id user.IdentityVerification, bu betUser) identityVerification {
 	return identityVerification{
 		UUID:                id.UUID,
-		UserUUID:            id.UserUUID,
+		User:                bu,
 		Status:              id.Status,
 		IDPhotoBase64:       id.IDPhotoBase64,
 		PortraitPhotoBase64: id.PortraitPhotoBase64,
@@ -121,10 +121,15 @@ func (s *Server) betUserRouter() http.Handler {
 	r.Group(func(r chi.Router) {
 		r.Use(s.sessions.Auth)
 
+		r.Get("/me", s.withBetUser(s.betUserMe))
 		r.Post("/identity-verification", s.withBetUser(s.createVerificationRequest))
 	})
 
 	return r
+}
+
+func (s *Server) betUserMe(w http.ResponseWriter, r *http.Request, bu user.BetUser) {
+	respondJSON(w, http.StatusOK, betUserView(bu))
 }
 
 func (s *Server) registerBetUser(w http.ResponseWriter, r *http.Request) {
@@ -252,5 +257,5 @@ func (s *Server) createVerificationRequest(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	respondJSON(w, http.StatusCreated, identityVerificationView(ver))
+	respondJSON(w, http.StatusCreated, identityVerificationView(ver, betUserView(bu)))
 }
