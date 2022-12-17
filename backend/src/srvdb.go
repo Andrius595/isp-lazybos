@@ -256,7 +256,7 @@ func (a *serverDBAdapter) InsertEvent(ctx context.Context, ev bet.Event) error {
 	}
 
 	for _, p := range ev.AwayTeam.Players {
-		homePlayers = append(awayPlayers, encodePlayer(p, ev.AwayTeam.UUID))
+		awayPlayers = append(awayPlayers, encodePlayer(p, ev.AwayTeam.UUID))
 	}
 
 	for _, s := range ev.Selections {
