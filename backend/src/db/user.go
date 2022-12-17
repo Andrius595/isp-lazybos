@@ -2,28 +2,63 @@ package db
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
+	"time"
 
-	"github.com/ramasauskas/ispbet/user"
+	"github.com/shopspring/decimal"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
 )
 
-type fetchUserCriteria func(sq.SelectBuilder) sq.SelectBuilder
+type BetUser struct {
+	User
+	IdentityVerified bool            `db:"betusr.identity_verified"`
+	Balance          decimal.Decimal `db:"betusr.balance"`
+}
+
+type User struct {
+	UUID             uuid.UUID `db:"usr.uuid"`
+	Email            string    `db:"usr.email"`
+	PasswordHash     string    `db:"usr.password_hash"`
+	FirstName        string    `db:"usr.first_name"`
+	LastName         string    `db:"usr.last_name"`
+	EmailVerified    bool      `db:"usr.email_verified"`
+	IdentityVerified bool      `db:"usr.identity_verified"`
+}
+
+type IdentityVerification struct {
+	UUID                uuid.UUID `db:"idv.uuid"`
+	UserUUID            uuid.UUID `db:"idv.user_uuid"`
+	Status              string    `db:"idv.status"`
+	IDPhotoBase64       string    `db:"idv.id_photo_base_64"`
+	PortraitPhotoBase64 string    `db:"idv.portrait_photo_base_64"`
+	RespondedAt         time.Time `db:"idv.responded_at"`
+	CreatedAt           time.Time `db:"idv.created_at"`
+}
+
+type EmailVerification struct {
+	UserUUID  uuid.UUID `db:"emailver.user_uuid"`
+	Token     string    `db:"emailver.token"`
+	Activated bool      `db:"emailver.activated"`
+}
+
+type fetchUserCriteria func(b sq.SelectBuilder, prefix string) sq.SelectBuilder
 
 func FetchUserByUUID(uuid uuid.UUID) fetchUserCriteria {
-	return func(b sq.SelectBuilder) sq.SelectBuilder {
-		return b.Where(sq.Eq{"uuid": uuid})
+	return func(b sq.SelectBuilder, prefix string) sq.SelectBuilder {
+		return b.Where(sq.Eq{column(prefix, "uuid"): uuid})
 	}
 }
 
 func FetchUserByEmail(email string) fetchUserCriteria {
-	return func(b sq.SelectBuilder) sq.SelectBuilder {
-		return b.Where(sq.Eq{"email": email})
+	return func(b sq.SelectBuilder, prefix string) sq.SelectBuilder {
+		return b.Where(sq.Eq{column(prefix, "email"): email})
 	}
 }
 
-func (d *DB) InsertUser(ctx context.Context, e sq.ExecerContext, u user.User) error {
+func (d *DB) InsertUser(ctx context.Context, e sq.ExecerContext, u User) error {
 	b := sq.Insert("user").SetMap(map[string]interface{}{
 		"uuid":           u.UUID,
 		"email":          u.Email,
@@ -37,26 +72,28 @@ func (d *DB) InsertUser(ctx context.Context, e sq.ExecerContext, u user.User) er
 	return err
 }
 
-func (d *DB) InsertBetUser(ctx context.Context, e sq.ExecerContext, u user.BetUser) error {
+func (d *DB) InsertBetUser(ctx context.Context, e sq.ExecerContext, u BetUser) error {
 	b := sq.Insert("bet_user").SetMap(map[string]interface{}{
 		"user_uuid":         u.UUID,
 		"identity_verified": u.IdentityVerified,
+		"balance":           u.Balance,
 	})
 
 	_, err := sq.ExecContextWith(ctx, e, b)
 	return err
 }
 
-func (d *DB) UpdateBetUser(ctx context.Context, e sq.ExecerContext, u user.BetUser) error {
+func (d *DB) UpdateBetUser(ctx context.Context, e sq.ExecerContext, u BetUser) error {
 	b := sq.Update("bet_user").SetMap(map[string]interface{}{
 		"identity_verified": u.IdentityVerified,
+		"balance":           u.Balance,
 	}).Where(sq.Eq{"user_uuid": u.UUID})
 
 	_, err := sq.ExecContextWith(ctx, e, b)
 	return err
 }
 
-func (d *DB) UpdateUser(ctx context.Context, e sq.ExecerContext, u user.User) error {
+func (d *DB) UpdateUser(ctx context.Context, e sq.ExecerContext, u User) error {
 	b := sq.Update("user").SetMap(map[string]interface{}{
 		"email_verified": u.EmailVerified,
 	}).Where(sq.Eq{"uuid": u.UUID})
@@ -65,88 +102,63 @@ func (d *DB) UpdateUser(ctx context.Context, e sq.ExecerContext, u user.User) er
 	return err
 }
 
-func (d *DB) FetchBetUser(ctx context.Context, q sq.QueryerContext, c fetchUserCriteria) (user.BetUser, bool, error) {
-	u, ok, err := d.FetchUser(ctx, q, c)
-	if err != nil {
-		return user.BetUser{}, false, err
+func (d *DB) FetchBetUser(ctx context.Context, q sq.QueryerContext, c fetchUserCriteria) (BetUser, bool, error) {
+	b := sq.Select()
+
+	b = betUserQuery(userQuery(b, "usr"), "betusr").From("bet_user AS betusr").InnerJoin("user usr ON usr.uuid=betusr.user_uuid")
+
+	qr, _ := b.MustSql()
+	fmt.Println(qr)
+
+	var bu BetUser
+
+	err := d.d.GetContext(ctx, &bu, qr)
+	switch err {
+	case nil:
+		return bu, true, nil
+	case sql.ErrNoRows:
+		return BetUser{}, false, nil
+	default:
+		return BetUser{}, false, err
 	}
-
-	if !ok {
-		return user.BetUser{}, false, nil
-	}
-
-	b := sq.Select("identity_verified").From("bet_user").Where(sq.Eq{"user_uuid": u.UUID})
-
-	rows, err := sq.QueryContextWith(ctx, q, b)
-	if err != nil {
-		return user.BetUser{}, false, err
-	}
-
-	defer rows.Close()
-
-	if !rows.Next() {
-		return user.BetUser{}, false, nil
-	}
-
-	bu := user.BetUser{
-		User: u,
-	}
-
-	err = rows.Scan(&bu.IdentityVerified)
-	if err != nil {
-		return user.BetUser{}, false, err
-	}
-
-	if rows.Err() != nil {
-		return user.BetUser{}, false, rows.Err()
-	}
-
-	return bu, true, nil
 }
 
-func (d *DB) FetchUser(ctx context.Context, q sq.QueryerContext, c fetchUserCriteria) (user.User, bool, error) {
-	b := c(sq.Select(
-		"uuid",
-		"email",
-		"password_hash",
-		"first_name",
-		"last_name",
-		"email_verified",
-	).From("user").Limit(1))
+func (d *DB) FetchBetUsers(ctx context.Context, q sq.QueryerContext) ([]BetUser, error) {
+	var b sq.SelectBuilder
 
-	rows, err := sq.QueryContextWith(ctx, q, b)
-	if err != nil {
-		return user.User{}, false, err
+	b = betUserQuery(userQuery(b, "usr"), "betusr").From("bet_user AS betusr").InnerJoin("user AS usr ON usr.uuid=betusr.user_uuid")
+
+	qr, args := b.MustSql()
+
+	var uu []BetUser
+
+	if err := d.d.SelectContext(ctx, &uu, qr, args); err != nil {
+		return nil, err
 	}
 
-	defer rows.Close()
-
-	if !rows.Next() {
-		return user.User{}, false, nil
-	}
-
-	var u user.User
-
-	err = rows.Scan(
-		&u.UUID,
-		&u.Email,
-		&u.PasswordHash,
-		&u.FirstName,
-		&u.LastName,
-		&u.EmailVerified,
-	)
-	if err != nil {
-		return user.User{}, false, err
-	}
-
-	if rows.Err() != nil {
-		return user.User{}, false, rows.Err()
-	}
-
-	return u, true, nil
+	return uu, nil
 }
 
-func (d *DB) InsertIdentityVerification(ctx context.Context, e sq.ExecerContext, ver user.IdentityVerification) error {
+func (d *DB) FetchUser(ctx context.Context, q sq.QueryerContext, c fetchUserCriteria) (User, bool, error) {
+	var b sq.SelectBuilder
+
+	b = c(userQuery(b, "usr").From("user AS usr"), "usr")
+	var u User
+
+	qr, args := b.MustSql()
+
+	err := d.d.GetContext(ctx, &u, qr, args)
+	switch err {
+	case nil:
+		return u, true, nil
+	case sql.ErrNoRows:
+		return User{}, false, nil
+	default:
+		return User{}, false, err
+	}
+}
+
+func (d *DB) InsertIdentityVerification(ctx context.Context, e sq.ExecerContext, ver IdentityVerification) error {
 	b := sq.Insert("identity_verification").SetMap(map[string]interface{}{
 		"uuid":                  ver.UUID,
 		"user_uuid":             ver.UserUUID,
@@ -161,7 +173,7 @@ func (d *DB) InsertIdentityVerification(ctx context.Context, e sq.ExecerContext,
 	return err
 }
 
-func (db *DB) UpdateIdentityVerification(ctx context.Context, e sq.ExecerContext, ver user.IdentityVerification) error {
+func (db *DB) UpdateIdentityVerification(ctx context.Context, e sq.ExecerContext, ver IdentityVerification) error {
 	b := sq.Update("identity_verification").SetMap(map[string]interface{}{
 		"responded_at": ver.RespondedAt,
 		"status":       ver.Status,
@@ -171,77 +183,43 @@ func (db *DB) UpdateIdentityVerification(ctx context.Context, e sq.ExecerContext
 	return err
 }
 
-func (d *DB) FetchIdentityVerification(ctx context.Context, q sq.QueryerContext, id uuid.UUID) (user.IdentityVerification, bool, error) {
-	b := identityVerificationsQuery().Where(sq.Eq{"uuid": id})
+func (d *DB) FetchIdentityVerification(ctx context.Context, q sq.QueryerContext, id uuid.UUID) (IdentityVerification, bool, error) {
+	var b sq.SelectBuilder
 
-	rows, err := sq.QueryContextWith(ctx, q, b)
-	if err != nil {
-		return user.IdentityVerification{}, false, err
+	b = identityVerificatiosQuery(b, "idv").From("identity_verification AS idv").Where(sq.Eq{"idv.uuid": id})
+
+	qr, args := b.MustSql()
+
+	var ver IdentityVerification
+
+	err := d.d.GetContext(ctx, &ver, qr, args)
+	switch err {
+	case nil:
+		return ver, true, nil
+	case sql.ErrNoRows:
+		return IdentityVerification{}, false, nil
+	default:
+		return IdentityVerification{}, false, err
 	}
-
-	defer rows.Close()
-
-	if !rows.Next() {
-		return user.IdentityVerification{}, false, nil
-	}
-
-	var ver user.IdentityVerification
-
-	err = rows.Scan(
-		&ver.UUID,
-		&ver.UserUUID,
-		&ver.Status,
-		&ver.IDPhotoBase64,
-		&ver.PortraitPhotoBase64,
-		&ver.RespondedAt,
-		&ver.CreatedAt,
-	)
-	if err != nil {
-		return user.IdentityVerification{}, false, err
-	}
-
-	return ver, true, nil
 }
 
-func (d *DB) FetchIdentityVerifications(ctx context.Context, q sq.QueryerContext) ([]user.IdentityVerification, error) {
-	b := identityVerificationsQuery()
+func (d *DB) FetchIdentityVerifications(ctx context.Context, q sq.QueryerContext) ([]IdentityVerification, error) {
+	var b sq.SelectBuilder
 
-	rows, err := sq.QueryContextWith(ctx, q, b)
-	if err != nil {
+	b = identityVerificatiosQuery(b, "idv").From("identity_verification AS idv")
+
+	qr, args := b.MustSql()
+
+	var ids []IdentityVerification
+
+	if err := d.d.SelectContext(ctx, &ids, qr, args); err != nil {
 		return nil, err
 	}
 
-	defer rows.Close()
-
-	var verifs []user.IdentityVerification
-
-	for rows.Next() {
-		var ver user.IdentityVerification
-
-		err = rows.Scan(
-			&ver.UUID,
-			&ver.UserUUID,
-			&ver.Status,
-			&ver.IDPhotoBase64,
-			&ver.PortraitPhotoBase64,
-			&ver.RespondedAt,
-			&ver.CreatedAt,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		verifs = append(verifs, ver)
-	}
-
-	if rows.Err() != nil {
-		return nil, rows.Err()
-	}
-
-	return verifs, nil
+	return ids, nil
 }
 
-func (d *DB) InsertEmailVerification(ctx context.Context, e sq.ExecerContext, ve user.EmailVerification) error {
+func (d *DB) InsertEmailVerification(ctx context.Context, e sq.ExecerContext, ve EmailVerification) error {
 	b := sq.Insert("email_verification_token").SetMap(map[string]interface{}{
 		"user_uuid": ve.UserUUID,
 		"token":     ve.Token,
@@ -252,7 +230,7 @@ func (d *DB) InsertEmailVerification(ctx context.Context, e sq.ExecerContext, ve
 	return err
 }
 
-func (d *DB) UpdateEmailVerification(ctx context.Context, e sq.ExecerContext, ve user.EmailVerification) error {
+func (d *DB) UpdateEmailVerification(ctx context.Context, e sq.ExecerContext, ve EmailVerification) error {
 	b := sq.Update("email_verification_token").SetMap(map[string]interface{}{
 		"activated": ve.Activated,
 	})
@@ -261,37 +239,64 @@ func (d *DB) UpdateEmailVerification(ctx context.Context, e sq.ExecerContext, ve
 	return err
 }
 
-func (d *DB) FetchEmailVerification(ctx context.Context, q sq.QueryerContext, token string) (user.EmailVerification, bool, error) {
-	b := sq.Select("token", "user_uuid", "activated").From("email_verification_token").Where(sq.Eq{"token": token})
+func (d *DB) FetchEmailVerification(ctx context.Context, q sq.QueryerContext, token string) (EmailVerification, bool, error) {
+	var b sq.SelectBuilder
 
-	rows, err := sq.QueryContextWith(ctx, q, b)
-	if err != nil {
-		return user.EmailVerification{}, false, err
+	b = emailVerificationQuery(b, "emailver").From("email_verification_token AS emailver").Where(sq.Eq{"emailver.token": token})
+
+	qr, args := b.MustSql()
+
+	var ver EmailVerification
+
+	err := d.d.GetContext(ctx, &ver, qr, args)
+	switch err {
+	case nil:
+		return ver, true, nil
+	case sql.ErrNoRows:
+		return EmailVerification{}, false, nil
+	default:
+		return EmailVerification{}, false, err
 	}
-
-	defer rows.Close()
-
-	if !rows.Next() {
-		return user.EmailVerification{}, false, nil
-	}
-
-	var ve user.EmailVerification
-
-	if err = rows.Scan(&ve.Token, &ve.UserUUID, &ve.Activated); err != nil {
-		return user.EmailVerification{}, false, nil
-	}
-
-	return ve, true, nil
 }
 
-func identityVerificationsQuery() sq.SelectBuilder {
-	return sq.Select(
-		"uuid",
-		"user_uuid",
-		"status",
-		"id_photo_base64",
-		"portrait_photo_base64",
-		"responded_at",
-		"created_at",
-	).From("identity_verification").OrderBy("created_at DESC")
+func column(prefix, name string) string {
+	return fmt.Sprintf("%s.%s AS `%s.%s`", prefix, name, prefix, name)
+}
+
+func userQuery(b sq.SelectBuilder, prefix string) sq.SelectBuilder {
+	return b.Columns(
+		column(prefix, "uuid"),
+		column(prefix, "email"),
+		column(prefix, "password_hash"),
+		column(prefix, "first_name"),
+		column(prefix, "last_name"),
+		column(prefix, "email_verified"),
+	)
+}
+
+func identityVerificatiosQuery(b sq.SelectBuilder, prefix string) sq.SelectBuilder {
+	return b.Columns(
+		column(prefix, "uuid"),
+		column(prefix, "user_uuid"),
+		column(prefix, "status"),
+		column(prefix, "id_photo_base64"),
+		column(prefix, "portrait_photo_base64"),
+		column(prefix, "responded_at"),
+		column(prefix, "created_at"),
+	)
+}
+
+func betUserQuery(b sq.SelectBuilder, prefix string) sq.SelectBuilder {
+	return b.Columns(
+		column(prefix, "identity_verified"),
+		column(prefix, "balance"),
+	)
+}
+
+func emailVerificationQuery(b sq.SelectBuilder, prefix string) sq.SelectBuilder {
+	return b.Columns(
+		column(prefix, "token"),
+		column(prefix, "user_uuid"),
+		column(prefix, "activated"),
+	)
 }

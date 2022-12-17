@@ -84,12 +84,6 @@ type EmailSender interface {
 	SendEmail(ctx context.Context, to, msg string) error
 }
 
-type EmailVerificationDB interface {
-	InsertEmailVerification(context.Context, user.EmailVerification) error
-	FetchEmailVerification(context.Context, string) (user.EmailVerification, bool, error)
-	InsertUserVerification(context.Context, user.User, user.EmailVerification) error
-}
-
 func randomTextToken(n int) (string, error) {
 	s := "QWERTYUIOPASDFGHJKLZXCVBNM"
 

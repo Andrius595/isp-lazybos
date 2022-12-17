@@ -78,7 +78,14 @@ type newIdentityVerification struct {
 }
 
 func (id newIdentityVerification) Validate() error {
-	//TODO: check lens
+	if len(id.IDPhoto) == 0 {
+		return errors.New("no ID photo provided")
+	}
+
+	if len(id.PortraitPhoto) == 0 {
+		return errors.New("no portrait photo provided")
+	}
+
 	return nil
 }
 
@@ -113,7 +120,8 @@ func (s *Server) betUserRouter() http.Handler {
 
 	r.Group(func(r chi.Router) {
 		r.Use(s.sessions.Auth)
-		r.Post("/identity-verification", s.withBetUser(s.submitVerificationRequest))
+
+		r.Post("/identity-verification", s.withBetUser(s.createVerificationRequest))
 	})
 
 	return r
@@ -215,25 +223,27 @@ func (s *Server) loginBetUser(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusOK, betUserView(u))
 }
 
-func (s *Server) submitVerificationRequest(w http.ResponseWriter, r *http.Request, bu user.BetUser) {
-	var input struct {
-		IDPhoto       string `json:"id_photo"`
-		PortraitPhoto string `json:"portrait_photo"`
-	}
+func (s *Server) createVerificationRequest(w http.ResponseWriter, r *http.Request, bu user.BetUser) {
+	var req newIdentityVerification
 
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		respondErr(w, badRequestErr(err))
 		return
 	}
 
-	ver, err := bu.CreateVerificationRequest(input.IDPhoto, input.PortraitPhoto)
+	if err := req.Validate(); err != nil {
+		respondErr(w, badRequestErr(err))
+		return
+	}
+
+	ver, err := bu.CreateVerificationRequest(req.IDPhoto, req.PortraitPhoto)
 	if err != nil {
 		respondErr(w, badRequestErr(err))
 		return
 	}
 
 	ctx := r.Context()
-	log := s.logger("submitVerificationRequest")
+	log := s.logger("createVerificationRequest")
 
 	if err = s.db.InsertBetUserIdentityVerification(ctx, ver); err != nil {
 		log.Error().Err(err).Msg("cannot insert identity verification")

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -40,6 +41,7 @@ func (u *User) Login(p string) bool {
 type BetUser struct {
 	User
 	IdentityVerified bool
+	Balance          decimal.Decimal
 }
 
 func (bu BetUser) CreateVerificationRequest(id, portrait string) (IdentityVerification, error) {
@@ -58,7 +60,17 @@ func (bu BetUser) CreateVerificationRequest(id, portrait string) (IdentityVerifi
 }
 
 func (bu BetUser) CanBet() bool {
-	return bu.IdentityVerified
+	return bu.IdentityVerified && bu.EmailVerified
+}
+
+func (bu *BetUser) Credit(amount decimal.Decimal) error {
+	if amount.IsNegative() {
+		return errors.New("cannot credit negative amount")
+	}
+
+	bu.Balance = bu.Balance.Add(amount)
+
+	return nil
 }
 
 type IdentityVerificationStatus string
