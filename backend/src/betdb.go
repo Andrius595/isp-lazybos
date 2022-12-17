@@ -41,13 +41,53 @@ func (b *betDBAdapter) FetchBetsBySelection(ctx context.Context, uuid uuid.UUID)
 	return bb, nil
 }
 
-func (b *betDBAdapter) InsertBet(_ context.Context, _ bet.Bet, _ user.BetUser) error {
-	return nil
+func (b *betDBAdapter) InsertBet(ctx context.Context, bt bet.Bet, u user.BetUser) error {
+	tx, err := b.db.NewTX(ctx)
+	if err != nil {
+		return err
+	}
 
+	defer tx.Rollback()
+
+	if err := b.db.InsertBet(ctx, tx, encodeBet(bt)); err != nil {
+		return err
+	}
+
+	if err := b.db.UpdateBetUser(ctx, tx, encodeBetUser(u)); err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
 
-func (b *betDBAdapter) UpdateBet(_ context.Context, _ bet.Bet, _ user.BetUser) error {
-	return nil
+func (b *betDBAdapter) UpdateBet(ctx context.Context, bt bet.Bet, u user.BetUser) error {
+	tx, err := b.db.NewTX(ctx)
+	if err != nil {
+		return err
+	}
+
+	defer tx.Rollback()
+
+	if err := b.db.UpdateBet(ctx, tx, encodeBet(bt)); err != nil {
+		return err
+	}
+
+	if err := b.db.UpdateBetUser(ctx, tx, encodeBetUser(u)); err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
+func encodeBet(b bet.Bet) db.Bet {
+	return db.Bet{
+		UUID:            b.UUID,
+		UserUUID:        b.UserUUID,
+		SelectionUUID:   b.SelectionUUID,
+		SelectionWinner: b.SelectionUUID.String(),
+		Stake:           b.Stake,
+		State:           string(b.State),
+	}
 }
 
 func decodeBet(b db.Bet) bet.Bet {
