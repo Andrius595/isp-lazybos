@@ -108,7 +108,6 @@ func (d *DB) FetchBetUser(ctx context.Context, q sq.QueryerContext, c fetchUserC
 	b = betUserQuery(userQuery(b, "usr"), "betusr").From("bet_user AS betusr").InnerJoin("user usr ON usr.uuid=betusr.user_uuid")
 
 	qr, _ := b.MustSql()
-	fmt.Println(qr)
 
 	var bu BetUser
 

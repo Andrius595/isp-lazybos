@@ -1,6 +1,7 @@
 package bet
 
 import (
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -15,6 +16,15 @@ const (
 )
 
 type Winner string
+
+func (w Winner) Validate() error {
+	switch w {
+	case WinnerHome, WinnerAway, WinnerTBD:
+		return nil
+	default:
+		return errors.New("invalid winner set, must be home, away or tbd")
+	}
+}
 
 const (
 	WinnerHome Winner = "home"

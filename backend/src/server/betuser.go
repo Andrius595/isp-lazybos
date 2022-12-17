@@ -137,6 +137,7 @@ func (s *Server) betUserRouter() http.Handler {
 
 		r.Get("/me", s.withBetUser(s.betUserMe))
 		r.Post("/identity-verification", s.withBetUser(s.createVerificationRequest))
+		r.Post("/bet", s.withBetUser(s.bet))
 	})
 
 	return r
@@ -294,7 +295,7 @@ func (s *Server) bet(w http.ResponseWriter, r *http.Request, u user.BetUser) {
 	ctx := r.Context()
 	log := s.logger("bet")
 
-	resp, err := s.better.Bet(ctx, b)
+	resp, err := s.better.Bet(ctx, &b, &u)
 	if err != nil {
 		log.Error().Err(err).Msg("cannot place bet")
 		respondErr(w, internalErr())
@@ -316,5 +317,5 @@ type BetResponse struct {
 }
 
 type Better interface {
-	Bet(context.Context, bet.Bet) (BetResponse, error)
+	Bet(context.Context, *bet.Bet, *user.BetUser) (BetResponse, error)
 }

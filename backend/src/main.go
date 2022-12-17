@@ -31,8 +31,20 @@ func main() {
 		db: database,
 	}
 
+	betDBAdapter := &betDBAdapter{
+		db: database,
+	}
+
+	better := better{
+		db: betDBAdapter,
+	}
+
+	betSrv := serverBetAdapter{
+		better: better,
+	}
+
 	srvLog := log.With().Str("goroutine", "server").Logger()
-	srv := server.NewServer(8080, sessionStore, &serverBetAdapter{}, &dummyEmail{
+	srv := server.NewServer(8080, sessionStore, &betSrv, &dummyEmail{
 		log: log.With().Str("goroutine", "email").Logger(),
 	}, dbAdapter, srvLog)
 
