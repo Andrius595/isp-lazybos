@@ -74,6 +74,11 @@ func (b *better) ResolveEventSelection(ctx context.Context, sel bet.EventSelecti
 		}
 
 		bt.Resolve(sel.Winner)
+
+		if err := u.Credit(bt.Stake); err != nil {
+			continue
+		}
+
 		if err := b.db.UpdateBet(ctx, bt, u); err != nil {
 			return err
 		}

@@ -103,6 +103,7 @@ CREATE TABLE IF NOT EXISTS bet (
 	uuid TEXT PRIMARY KEY NOT NULL,
 	user_uuid TEXT NOT NULL,
 	stake NUMERIC NOT NULL,
+	state TEXT NOT NULL,
 	selection_uuid TEXT NOT NULL,
 	selection_winner TEXT NOT NULL,
 

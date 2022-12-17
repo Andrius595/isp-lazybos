@@ -204,6 +204,7 @@ func (s *Server) adminRouter() http.Handler {
 	r.Post("/deposit", s.createDeposit)
 	r.Post("/withdraw", s.createWithdrawal)
 	r.Post("/event", s.createEvent)
+	r.Post("/resolve", s.resolveEventSelection)
 
 	return r
 }
@@ -510,8 +511,8 @@ func (s *Server) createEvent(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) resolveEventSelection(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		SelectionUUID uuid.UUID
-		Winner        bet.Winner
+		SelectionUUID uuid.UUID  `json:"selection_uuid"`
+		Winner        bet.Winner `json:"winner"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -534,6 +535,8 @@ func (s *Server) resolveEventSelection(w http.ResponseWriter, r *http.Request) {
 		respondErr(w, notFoundErr())
 		return
 	}
+
+	sel.Winner = input.Winner
 
 	if err := s.resolver.Resolve(ctx, sel); err != nil {
 		log.Error().Err(err).Msg("cannot resolve")

@@ -129,6 +129,25 @@ func (d *DB) FetchSelectionsByEvent(ctx context.Context, q sq.QueryerContext, id
 	return ss, nil
 }
 
+func (d *DB) FetchSelectionByUUID(ctx context.Context, q sq.QueryerContext, id uuid.UUID) (EventSelection, bool, error) {
+	b := sq.Select()
+
+	b = selectionQuery(b, "es").From("event_selection AS es").Where(sq.Eq{"es.uuid": id})
+	qr, args := b.MustSql()
+
+	var es EventSelection
+
+	err := d.d.GetContext(ctx, &es, qr, args...)
+	switch err {
+	case nil:
+		return es, true, nil
+	case sql.ErrNoRows:
+		return EventSelection{}, false, nil
+	default:
+		return EventSelection{}, false, err
+	}
+}
+
 func (d *DB) FetchTeamByUUID(ctx context.Context, q sq.QueryerContext, id uuid.UUID) (Team, bool, error) {
 	b := sq.Select()
 
@@ -185,7 +204,7 @@ func (d *DB) FetchBetsBySelection(ctx context.Context, q sq.QueryerContext, id u
 
 	var bb []Bet
 
-	if err := d.d.SelectContext(ctx, &bb, qr, args); err != nil {
+	if err := d.d.SelectContext(ctx, &bb, qr, args...); err != nil {
 		return nil, err
 	}
 

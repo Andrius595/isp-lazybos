@@ -381,7 +381,16 @@ func (a *serverDBAdapter) FetchEvents(ctx context.Context) ([]bet.Event, error) 
 }
 
 func (a *serverDBAdapter) FetchSelection(ctx context.Context, id uuid.UUID) (bet.EventSelection, bool, error) {
-	return bet.EventSelection{}, false, nil
+	sel, ok, err := a.db.FetchSelectionByUUID(ctx, a.db.NoTX(), id)
+	if err != nil {
+		return bet.EventSelection{}, false, err
+	}
+
+	if !ok {
+		return bet.EventSelection{}, false, nil
+	}
+
+	return decodeSelection(sel), true, nil
 }
 
 func decodeUser(u db.User) user.User {
