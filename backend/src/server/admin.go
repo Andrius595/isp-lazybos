@@ -195,7 +195,7 @@ func (s *Server) adminRouter() http.Handler {
 	r := chi.NewRouter()
 
 	r.Get("/bet-users", s.betUsers)
-	r.Post("/identity-verifications", s.identityVerifications)
+	r.Get("/identity-verifications", s.identityVerifications)
 	r.Post("/finalize-identity-verification", s.finalizeIdentityVerification)
 	r.Post("/deposit", s.createDeposit)
 	r.Post("/withdraw", s.createWithdrawal)

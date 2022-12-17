@@ -32,8 +32,8 @@ type IdentityVerification struct {
 	UUID                uuid.UUID `db:"idv.uuid"`
 	UserUUID            uuid.UUID `db:"idv.user_uuid"`
 	Status              string    `db:"idv.status"`
-	IDPhotoBase64       string    `db:"idv.id_photo_base_64"`
-	PortraitPhotoBase64 string    `db:"idv.portrait_photo_base_64"`
+	IDPhotoBase64       string    `db:"idv.id_photo_base64"`
+	PortraitPhotoBase64 string    `db:"idv.portrait_photo_base64"`
 	RespondedAt         time.Time `db:"idv.responded_at"`
 	CreatedAt           time.Time `db:"idv.created_at"`
 }
