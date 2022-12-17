@@ -10,6 +10,14 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+type fetchEventCriteria func(b sq.SelectBuilder, prefix string) sq.SelectBuilder
+
+func EventNotFinished() fetchEventCriteria {
+	return func(b sq.SelectBuilder, prefix string) sq.SelectBuilder {
+		return b.Where(sq.NotEq{columnPredicate(prefix, "finished"): true})
+	}
+}
+
 type Bet struct {
 	UUID            uuid.UUID       `db:"bt.uuid"`
 	UserUUID        uuid.UUID       `db:"bt.user_uuid"`
@@ -99,15 +107,15 @@ func (d *DB) InsertTeamPlayer(ctx context.Context, e sq.ExecerContext, tp TeamPl
 	return err
 }
 
-func (d *DB) FetchEvents(ctx context.Context, q sq.QueryerContext) ([]Event, error) {
+func (d *DB) FetchEvents(ctx context.Context, q sq.QueryerContext, c fetchEventCriteria) ([]Event, error) {
 	b := sq.Select()
 
-	b = eventQuery(b, "betev").From("bet_event AS betev")
-	qr, _ := b.MustSql()
+	b = c(eventQuery(b, "betev").From("bet_event AS betev"), "betev")
+	qr, args := b.MustSql()
 
 	var ee []Event
 
-	if err := d.d.SelectContext(ctx, &ee, qr); err != nil {
+	if err := d.d.SelectContext(ctx, &ee, qr, args...); err != nil {
 		return nil, err
 	}
 

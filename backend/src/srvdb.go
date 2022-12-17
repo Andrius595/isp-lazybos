@@ -305,7 +305,7 @@ func (a *serverDBAdapter) InsertEvent(ctx context.Context, ev bet.Event) error {
 }
 
 func (a *serverDBAdapter) FetchEvents(ctx context.Context) ([]bet.Event, error) {
-	evs, err := a.db.FetchEvents(ctx, a.db.NoTX())
+	evs, err := a.db.FetchEvents(ctx, a.db.NoTX(), db.EventNotFinished())
 	if err != nil {
 		return nil, err
 	}

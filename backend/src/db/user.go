@@ -48,13 +48,13 @@ type fetchUserCriteria func(b sq.SelectBuilder, prefix string) sq.SelectBuilder
 
 func FetchUserByUUID(uuid uuid.UUID) fetchUserCriteria {
 	return func(b sq.SelectBuilder, prefix string) sq.SelectBuilder {
-		return b.Where(sq.Eq{column(prefix, "uuid"): uuid})
+		return b.Where(sq.Eq{columnPredicate(prefix, "uuid"): uuid})
 	}
 }
 
 func FetchUserByEmail(email string) fetchUserCriteria {
 	return func(b sq.SelectBuilder, prefix string) sq.SelectBuilder {
-		return b.Where(sq.Eq{column(prefix, "email"): email})
+		return b.Where(sq.Eq{columnPredicate(prefix, "email"): email})
 	}
 }
 
@@ -260,6 +260,10 @@ func (d *DB) FetchEmailVerification(ctx context.Context, q sq.QueryerContext, to
 
 func column(prefix, name string) string {
 	return fmt.Sprintf("%s.%s AS `%s.%s`", prefix, name, prefix, name)
+}
+
+func columnPredicate(prefix, name string) string {
+	return fmt.Sprintf("%s.%s", prefix, name)
 }
 
 func userQuery(b sq.SelectBuilder, prefix string) sq.SelectBuilder {
