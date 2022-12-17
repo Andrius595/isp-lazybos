@@ -9,8 +9,22 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"github.com/ramasauskas/ispbet/bet"
 	"github.com/ramasauskas/ispbet/user"
+	"github.com/shopspring/decimal"
 )
+
+type newUserBet struct {
+	SelectionUUID uuid.UUID       `json:"selection_uuid"`
+	Stake         decimal.Decimal `json:"stake"`
+	Winner        string          `json:"winner"`
+}
+
+type userBet struct {
+	UUID          uuid.UUID       `json:"uuid"`
+	Stake         decimal.Decimal `json:"stake"`
+	SelectionUUID uuid.UUID       `json:"selection_uuid"`
+}
 
 type newBetUser struct {
 	Email     string `json:"email"`
@@ -258,4 +272,49 @@ func (s *Server) createVerificationRequest(w http.ResponseWriter, r *http.Reques
 	}
 
 	respondJSON(w, http.StatusCreated, identityVerificationView(ver, betUserView(bu)))
+}
+
+func (s *Server) bet(w http.ResponseWriter, r *http.Request, u user.BetUser) {
+	var nb newUserBet
+
+	if err := json.NewDecoder(r.Body).Decode(&nb); err != nil {
+		respondErr(w, badRequestErr(err))
+		return
+	}
+
+	b := bet.Bet{
+		UUID:            uuid.New(),
+		UserUUID:        u.UUID,
+		SelectionUUID:   nb.SelectionUUID,
+		SelectionWinner: bet.Winner(nb.Winner),
+		Stake:           nb.Stake,
+		State:           bet.BetStateTBD,
+	}
+
+	ctx := r.Context()
+	log := s.logger("bet")
+
+	resp, err := s.better.Bet(ctx, b)
+	if err != nil {
+		log.Error().Err(err).Msg("cannot place bet")
+		respondErr(w, internalErr())
+
+		return
+	}
+
+	if !resp.Ok {
+		respondErr(w, badRequestErr(errors.New(resp.ErrorMessage)))
+		return
+	}
+
+	respondJSON(w, http.StatusCreated, b)
+}
+
+type BetResponse struct {
+	Ok           bool
+	ErrorMessage string
+}
+
+type Better interface {
+	Bet(context.Context, bet.Bet) (BetResponse, error)
 }

@@ -10,6 +10,15 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+type Bet struct {
+	UUID            uuid.UUID       `db:"bt.uuid"`
+	UserUUID        uuid.UUID       `db:"bt.user_uuid"`
+	SelectionUUID   uuid.UUID       `db:"bt.selection_uuid"`
+	SelectionWinner string          `db:"bt.selection_winner"`
+	Stake           decimal.Decimal `db:"bt.stake"`
+	State           string          `db:"bt.state"`
+}
+
 type Event struct {
 	UUID         uuid.UUID `db:"betev.uuid"`
 	Name         string    `db:"betev.name"`
@@ -154,6 +163,44 @@ func (d *DB) FetchPlayersByTeam(ctx context.Context, q sq.QueryerContext, id uui
 	return pp, nil
 }
 
+func (d *DB) InsertBet(ctx context.Context, e sq.ExecerContext, bt Bet) error {
+	b := sq.Insert("bet").SetMap(map[string]interface{}{
+		"uuid":             bt.UUID,
+		"user_uuid":        bt.UserUUID,
+		"selection_uuid":   bt.SelectionUUID,
+		"selection_winner": bt.SelectionWinner,
+		"stake":            bt.Stake,
+		"state":            bt.State,
+	})
+
+	_, err := sq.ExecContextWith(ctx, e, b)
+	return err
+}
+
+func (d *DB) FetchBetsBySelection(ctx context.Context, q sq.QueryerContext, id uuid.UUID) ([]Bet, error) {
+	b := sq.Select()
+
+	b = betQuery(b, "bt").From("bet AS bt").Where(sq.Eq{"bt.selection_uuid": id})
+	qr, args := b.MustSql()
+
+	var bb []Bet
+
+	if err := d.d.SelectContext(ctx, &bb, qr, args); err != nil {
+		return nil, err
+	}
+
+	return bb, nil
+}
+
+func (d *DB) UpdateBet(ctx context.Context, e sq.ExecerContext, bt Bet) error {
+	b := sq.Update("bet").SetMap(map[string]interface{}{
+		"state": bt.State,
+	}).Where(sq.Eq{"uuid": bt.UUID})
+
+	_, err := sq.ExecContextWith(ctx, e, b)
+	return err
+}
+
 func eventQuery(b sq.SelectBuilder, prefix string) sq.SelectBuilder {
 	return b.Columns(
 		column(prefix, "uuid"),
@@ -189,5 +236,16 @@ func teamPlayerQuery(b sq.SelectBuilder, prefix string) sq.SelectBuilder {
 		column(prefix, "uuid"),
 		column(prefix, "name"),
 		column(prefix, "team_uuid"),
+	)
+}
+
+func betQuery(b sq.SelectBuilder, prefix string) sq.SelectBuilder {
+	return b.Columns(
+		column(prefix, "uuid"),
+		column(prefix, "user_uuid"),
+		column(prefix, "selection_uuid"),
+		column(prefix, "selection_winner"),
+		column(prefix, "stake"),
+		column(prefix, "state"),
 	)
 }

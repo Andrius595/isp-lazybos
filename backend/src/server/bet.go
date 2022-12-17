@@ -26,7 +26,7 @@ func (s *Server) events(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var views []betEvent
+	views := make([]betEvent, 0)
 
 	for _, e := range evs {
 		views = append(views, betEventView(e))

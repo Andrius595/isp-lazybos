@@ -32,7 +32,7 @@ func main() {
 	}
 
 	srvLog := log.With().Str("goroutine", "server").Logger()
-	srv := server.NewServer(8080, sessionStore, &dummyEmail{
+	srv := server.NewServer(8080, sessionStore, &serverBetAdapter{}, &dummyEmail{
 		log: log.With().Str("goroutine", "email").Logger(),
 	}, dbAdapter, srvLog)
 
