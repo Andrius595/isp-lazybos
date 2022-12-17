@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -98,7 +97,6 @@ func (d *DB) FetchEvents(ctx context.Context, q sq.QueryerContext) ([]Event, err
 	var ee []Event
 
 	if err := d.d.SelectContext(ctx, &ee, qr); err != nil {
-		fmt.Println("HERE")
 		return nil, err
 	}
 
@@ -114,7 +112,6 @@ func (d *DB) FetchSelectionsByEvent(ctx context.Context, q sq.QueryerContext, id
 	var ss []EventSelection
 
 	if err := d.d.SelectContext(ctx, &ss, qr, args...); err != nil {
-		fmt.Println("HERE?")
 		return nil, err
 	}
 
@@ -136,7 +133,6 @@ func (d *DB) FetchTeamByUUID(ctx context.Context, q sq.QueryerContext, id uuid.U
 	case sql.ErrNoRows:
 		return Team{}, false, nil
 	default:
-		fmt.Println("HERE??")
 		return Team{}, false, err
 	}
 }
