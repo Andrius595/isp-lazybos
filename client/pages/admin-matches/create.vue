@@ -11,21 +11,21 @@
                   </div>
                   <div class="card-body">
                     <label for="name">Match name</label>
-                    <input v-model="message" type="text" name="name" placeholder="" class="form-control mb-2">
+                    <input  type="text" name="name" placeholder="" class="form-control mb-2">
                     <label for="date">Match start date</label>
-                    <p><input v-model="message" type="date" name="date" placeholder="" class="form-control mb-2"><input v-model="message" type="time" name="time" placeholder="" class="form-control mb-2"></p>
+                    <p><input  type="date" name="date" placeholder="" class="form-control mb-2"><input  type="time" name="time" placeholder="" class="form-control mb-2"></p>
                     <label for="sport">Sport</label>
-                    <select v-model="message"  class="form-select mb-3">
+                    <select   class="form-select mb-3">
                       <option disabled value ="">Select sport..</option>
                       <!-- Sporto šakos -->
                     </select>
                     <label for="team1">Team A</label>
-                    <select v-model="message"  class="form-select mb-3">
+                    <select   class="form-select mb-3">
                       <option disabled value ="">Select team A..</option>
                       <!-- Komandos -->
                     </select>
                     <label for="team2">Team B</label>
-                    <select v-model="message"  class="form-select mb-3">
+                    <select   class="form-select mb-3">
                       <option disabled value ="">Select team B..</option>
                       <!-- Komandos -->
                     </select>
@@ -33,25 +33,25 @@
                     <label for="checkbox"> Automatic odds calculation</label></p>
                     <div class="row">
                       <div class="col-sm">
-                        <button class="btn btn-primary btn-block mt-3" name="createMatch">Add match outcome</button>
+                        <button @click='isShowingOutcome = !isShowingOutcome' class="btn btn-primary btn-block mt-3" name="createMatch">Add match outcome</button>
                       </div>
-                      <div class="col-sm">
+                      <div id="hide" v-show='isShowingOutcome' class="col-sm">
                         <div class="row">
                           <div class="col-sm">
                             <label for="name">Outcome name</label>
-                            <input v-model="message" type="text" name="name" placeholder="" class="form-control mb-2">
+                            <input  type="text" name="name" placeholder="" class="form-control mb-2">
                             <label for="name">Odds team A</label>
-                            <input v-model="message" type="text" name="name" placeholder="" class="form-control mb-2">
+                            <input  type="number" name="name" placeholder="" class="form-control mb-2">
                             <label for="name">Odds team B</label>
-                            <input v-model="message" type="text" name="name" placeholder="" class="form-control mb-2">
+                            <input  type="number" name="name" placeholder="" class="form-control mb-2">
                             <button class="btn btn-primary btn-block mt-3" name="createMatch">Create match outcome</button>
                           </div>
                         </div>
                       </div>
 
                     </div>
-                    <label for="outcomeselection">Match outcome</label>
-                    <select style="margin-top:1rem" v-model="message"  class="form-select mb-3">
+                    <label style="margin-top:1rem"  for="outcomeselection">Match outcome</label>
+                    <select style="margin-top:1rem"   class="form-select mb-3">
                       <option disabled value ="">Select match outcome..</option>
                       <!-- Baigtys -->
                     </select>
@@ -64,11 +64,11 @@
                   </div>
                   <div class="card-body">
                     <label for="name">Team's name</label>
-                    <input v-model="message" type="text" name="name" placeholder="" class="form-control mb-2">
+                    <input  type="text" name="name" placeholder="" class="form-control mb-2">
                     <label for="date">Team's country</label>
-                    <input v-model="message" type="text" name="name" placeholder="" class="form-control mb-2">
+                    <input  type="text" name="name" placeholder="" class="form-control mb-2">
                     <label for="date">Team's league</label>
-                    <input v-model="message" type="text" name="name" placeholder="" class="form-control mb-2">
+                    <input  type="text" name="name" placeholder="" class="form-control mb-2">
                     <button class="btn btn-success btn-block mt-3" name="createMatch">Add team</button>
                     <p style="margin-top:0.5rem;">List of teams:</p>
                     <div class="overflow-auto" style="width:20rem;height:10rem">
@@ -88,15 +88,15 @@
                   </div>
                   <div class="card-body">
                     <label for="name">Player's name</label>
-                    <input v-model="message" type="text" name="name" placeholder="" class="form-control mb-2">
+                    <input  type="text" name="name" placeholder="" class="form-control mb-2">
                     <label for="date">Player's last name</label>
-                    <input v-model="message" type="text" name="name" placeholder="" class="form-control mb-2">
+                    <input  type="text" name="name" placeholder="" class="form-control mb-2">
                     <label for="date">Player's birth date</label>
-                    <input v-model="message" type="date" name="date" placeholder="" class="form-control mb-2">
+                    <input  type="date" name="date" placeholder="" class="form-control mb-2">
                     <label for="date">Player's nationality</label>
-                    <input v-model="message" type="text" name="name" placeholder="" class="form-control mb-2">
+                    <input  type="text" name="name" placeholder="" class="form-control mb-2">
                     <label for="team2">Player's team</label>
-                    <select v-model="message"  class="form-select mb-3">
+                    <select   class="form-select mb-3">
                       <option disabled value ="">Select team..</option>
                       <!-- Komandos -->
                     </select>
@@ -127,14 +127,9 @@ const router = useRouter()
 const route = useRoute()
 console.log(router.resolve(route))
 //
-const count = ref<number>(0)
-const message = ""
 const autoCoff = ref<boolean>(false)
-var isHidden = true
+const isShowingOutcome = ref<boolean>(false)
 
-function showHide() {
-  return this.isHidden = !this.isHidden;
-}
 
 </script>
 
