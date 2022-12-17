@@ -75,18 +75,20 @@ func (bu newBetUser) Materialize() (user.BetUser, error) {
 }
 
 type betUser struct {
-	UUID               uuid.UUID `json:"uuid"`
-	Email              string    `json:"email"`
-	FirstName          string    `json:"first_name"`
-	LastName           string    `json:"last_name"`
-	EmailVerified      bool      `json:"email_verified"`
-	IdentitityVerified bool      `json:"identitity_verified"`
+	UUID               uuid.UUID       `json:"uuid"`
+	Email              string          `json:"email"`
+	FirstName          string          `json:"first_name"`
+	LastName           string          `json:"last_name"`
+	EmailVerified      bool            `json:"email_verified"`
+	Balance            decimal.Decimal `json:"balance"`
+	IdentitityVerified bool            `json:"identitity_verified"`
 }
 
 func betUserView(u user.BetUser) betUser {
 	return betUser{
 		UUID:               u.UUID,
 		Email:              u.Email,
+		Balance:            u.Balance,
 		FirstName:          u.FirstName,
 		LastName:           u.LastName,
 		EmailVerified:      u.EmailVerified,
