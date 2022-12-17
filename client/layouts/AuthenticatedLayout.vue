@@ -6,7 +6,7 @@
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
-        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <div class="collapse navbar-collapse justify-content-end" id="navbarSupportedContent">
           <ul class="navbar-nav mb-2 mb-lg-0">
             <li class="nav-item">
               <NuxtLink class="nav-link" :class="{ active: isRouteActive(Routes.Profile)}" :href="getRouteUrl(Routes.Profile)">Paskyra</NuxtLink>
@@ -31,9 +31,6 @@
             </li>
             <li class="nav-item">
               <NuxtLink class="nav-link" :class="{ active: isRouteActive(Routes.AutomaticBets.List)}" :href="getRouteUrl(Routes.AutomaticBets.List)">Automatinių statymų sąrašas</NuxtLink>
-            </li>
-            <li class="nav-item">
-              <NuxtLink class="nav-link" :class="{ active: isRouteActive(Routes.Wallet.Activate)}" :href="getRouteUrl(Routes.Wallet.Activate)">Įnešimo aktyvavimo forma</NuxtLink>
             </li>
             <li class="nav-item">
               <NuxtLink class="nav-link" :class="{ active: isRouteActive(Routes.Wallet.Withdraw)}" :href="getRouteUrl(Routes.Wallet.Withdraw)">Išgryninimo forma</NuxtLink>
