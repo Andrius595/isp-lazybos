@@ -9,7 +9,7 @@ import (
 )
 
 type serverBetAdapter struct {
-	better better
+	better *better
 }
 
 func (adp *serverBetAdapter) Bet(ctx context.Context, b *bet.Bet, au *user.BetUser) (server.BetResponse, error) {

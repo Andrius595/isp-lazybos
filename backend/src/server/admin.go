@@ -111,7 +111,7 @@ func betEventView(e bet.Event) betEvent {
 		Selections: selections,
 		Sport:      string(e.Sport),
 		BeginsAt:   e.BeginsAt,
-		Finished:   e.Finished,
+		Finished:   e.Finished(),
 		HomeTeam:   home,
 		AwayTeam:   away,
 	}

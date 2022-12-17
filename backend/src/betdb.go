@@ -13,6 +13,10 @@ type betDBAdapter struct {
 	db *db.DB
 }
 
+func (b *betDBAdapter) UpdateEvent(ctx context.Context, e bet.Event) error {
+	return b.db.UpdateEvent(ctx, b.db.NoTX(), encodeEvent(e))
+}
+
 func (b *betDBAdapter) FetchBetUserByUUID(ctx context.Context, uuid uuid.UUID) (user.BetUser, bool, error) {
 	bu, ok, err := b.db.FetchBetUser(ctx, b.db.NoTX(), db.FetchUserByUUID(uuid))
 	if err != nil {
@@ -81,6 +85,37 @@ func (b *betDBAdapter) UpdateBet(ctx context.Context, bt bet.Bet, u user.BetUser
 
 func (b *betDBAdapter) UpdateSelection(ctx context.Context, sel bet.EventSelection) error {
 	return b.db.UpdateSelection(ctx, b.db.NoTX(), encodeSelection(sel, uuid.Nil))
+}
+
+func (b *betDBAdapter) FetchSelection(ctx context.Context, uuid uuid.UUID) (bet.EventSelection, bool, error) {
+	sel, ok, err := b.db.FetchSelectionByUUID(ctx, b.db.NoTX(), uuid)
+	if err != nil {
+		return bet.EventSelection{}, false, err
+	}
+
+	if !ok {
+		return bet.EventSelection{}, false, nil
+	}
+
+	return decodeSelection(sel), true, nil
+}
+
+func (b *betDBAdapter) FetchEvent(ctx context.Context, uuid uuid.UUID) (bet.Event, bool, error) {
+	ev, ok, err := b.db.FetchEvent(ctx, b.db.NoTX(), uuid)
+	if err != nil {
+		return bet.Event{}, false, err
+	}
+
+	if !ok {
+		return bet.Event{}, false, nil
+	}
+
+	e, err := fillEvent(ctx, b.db, b.db.NoTX(), ev)
+	if err != nil {
+		return bet.Event{}, false, err
+	}
+
+	return e, true, nil
 }
 
 func encodeBet(b bet.Bet) db.Bet {

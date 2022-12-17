@@ -114,6 +114,25 @@ func (d *DB) FetchEvents(ctx context.Context, q sq.QueryerContext) ([]Event, err
 	return ee, nil
 }
 
+func (d *DB) FetchEvent(ctx context.Context, q sq.QueryerContext, id uuid.UUID) (Event, bool, error) {
+	b := sq.Select()
+
+	b = eventQuery(b, "betev").From("bet_event AS betev").Where(sq.Eq{"betev.uuid": id})
+	qr, _ := b.MustSql()
+
+	var ee Event
+
+	err := d.d.GetContext(ctx, &ee, qr)
+	switch err {
+	case nil:
+		return ee, true, nil
+	case sql.ErrNoRows:
+		return Event{}, false, nil
+	default:
+		return Event{}, false, err
+	}
+}
+
 func (d *DB) FetchSelectionsByEvent(ctx context.Context, q sq.QueryerContext, id uuid.UUID) ([]EventSelection, error) {
 	b := sq.Select()
 
@@ -215,6 +234,15 @@ func (d *DB) UpdateBet(ctx context.Context, e sq.ExecerContext, bt Bet) error {
 	b := sq.Update("bet").SetMap(map[string]interface{}{
 		"state": bt.State,
 	}).Where(sq.Eq{"uuid": bt.UUID})
+
+	_, err := sq.ExecContextWith(ctx, e, b)
+	return err
+}
+
+func (d *DB) UpdateEvent(ctx context.Context, e sq.ExecerContext, ev Event) error {
+	b := sq.Update("event").SetMap(map[string]interface{}{
+		"finished": ev.Finished,
+	}).Where(sq.Eq{"uuid": ev.UUID})
 
 	_, err := sq.ExecContextWith(ctx, e, b)
 	return err
