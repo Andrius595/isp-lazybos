@@ -540,7 +540,7 @@ func decodeSelection(sel db.EventSelection) bet.EventSelection {
 
 func encodeTeam(t bet.Team) db.Team {
 	return db.Team{
-		UUID: uuid.New(),
+		UUID: t.UUID,
 		Name: t.Name,
 	}
 }
