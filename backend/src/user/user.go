@@ -73,6 +73,20 @@ func (bu *BetUser) Credit(amount decimal.Decimal) error {
 	return nil
 }
 
+func (bu *BetUser) Debit(amount decimal.Decimal) error {
+	if amount.IsNegative() {
+		return errors.New("cannot debit negative amount")
+	}
+
+	if bu.Balance.Sub(amount).LessThan(decimal.Zero) {
+		return errors.New("cannot debit more than user haves")
+	}
+
+	bu.Balance = bu.Balance.Sub(amount)
+
+	return nil
+}
+
 type IdentityVerificationStatus string
 
 const (

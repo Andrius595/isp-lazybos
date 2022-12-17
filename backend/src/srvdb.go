@@ -197,7 +197,26 @@ func (a *serverDBAdapter) InsertDeposit(ctx context.Context, u user.BetUser, d p
 		return err
 	}
 
-	if err = a.db.InsertDeposit(ctx, tx, d); err != nil {
+	if err = a.db.InsertDeposit(ctx, tx, encodeDeposit(d)); err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
+func (a *serverDBAdapter) InsertWithdrawal(ctx context.Context, u user.BetUser, wd purse.Withdrawal) error {
+	tx, err := a.db.NewTX(ctx)
+	if err != nil {
+		return err
+	}
+
+	defer tx.Rollback()
+
+	if err = a.db.UpdateBetUser(ctx, tx, encodeBetUser(u)); err != nil {
+		return err
+	}
+
+	if err = a.db.InsertWithdrawal(ctx, tx, encodeWithdrawal(wd)); err != nil {
 		return err
 	}
 
@@ -296,5 +315,41 @@ func decodeIdentityVerification(idv db.IdentityVerification) user.IdentityVerifi
 		PortraitPhotoBase64: idv.PortraitPhotoBase64,
 		RespondedAt:         idv.RespondedAt,
 		CreatedAt:           idv.CreatedAt,
+	}
+}
+
+func encodeDeposit(d purse.Deposit) db.Deposit {
+	return db.Deposit{
+		UUID:      d.UUID,
+		Amount:    d.Amount,
+		Timestamp: d.Timestamp,
+		UserUUID:  d.UserUUID,
+	}
+}
+
+func decodeDeposit(d db.Deposit) purse.Deposit {
+	return purse.Deposit{
+		UUID:      d.UUID,
+		Amount:    d.Amount,
+		Timestamp: d.Timestamp,
+		UserUUID:  d.UserUUID,
+	}
+}
+
+func encodeWithdrawal(wd purse.Withdrawal) db.Withdrawal {
+	return db.Withdrawal{
+		UUID:      wd.UUID,
+		Amount:    wd.Amount,
+		Timestamp: wd.Timestamp,
+		UserUUID:  wd.UserUUID,
+	}
+}
+
+func decodeWithdrawal(wd db.Withdrawal) purse.Withdrawal {
+	return purse.Withdrawal{
+		UUID:      wd.UUID,
+		Amount:    wd.Amount,
+		Timestamp: wd.Timestamp,
+		UserUUID:  wd.UserUUID,
 	}
 }

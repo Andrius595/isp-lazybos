@@ -36,4 +36,5 @@ type EmailVerificationDB interface {
 
 type PurseDB interface {
 	InsertDeposit(context.Context, user.BetUser, purse.Deposit) error
+	InsertWithdrawal(context.Context, user.BetUser, purse.Withdrawal) error
 }

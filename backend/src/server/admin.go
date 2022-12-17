@@ -18,11 +18,32 @@ type newDeposit struct {
 	UserUUID uuid.UUID       `json:"user_uuid"`
 }
 
+type newWithdrawal struct {
+	Amount   decimal.Decimal `json:"amount"`
+	UserUUID uuid.UUID       `json:"user_uuid"`
+}
+
 type deposit struct {
 	UUID      uuid.UUID       `json:"uuid"`
 	Amount    decimal.Decimal `json:"amount"`
 	Timestamp time.Time       `json:"timestamp"`
 	UserUUID  uuid.UUID       `json:"user_uuid"`
+}
+
+type withdrawal struct {
+	UUID      uuid.UUID       `json:"uuid"`
+	Amount    decimal.Decimal `json:"amount"`
+	Timestamp time.Time       `json:"timestamp"`
+	UserUUID  uuid.UUID       `json:"user_uuid"`
+}
+
+func withdrawalView(w purse.Withdrawal) withdrawal {
+	return withdrawal{
+		UUID:      w.UUID,
+		Amount:    w.Amount,
+		Timestamp: w.Timestamp,
+		UserUUID:  w.UserUUID,
+	}
 }
 
 func depositView(d purse.Deposit) deposit {
@@ -42,6 +63,14 @@ func (d *newDeposit) validate() error {
 	return nil
 }
 
+func (w *newWithdrawal) validate() error {
+	if w.Amount.LessThanOrEqual(decimal.Zero) {
+		return errors.New("amount cannot be less than or equal to 0")
+	}
+
+	return nil
+}
+
 func (s *Server) adminRouter() http.Handler {
 	r := chi.NewRouter()
 
@@ -49,6 +78,7 @@ func (s *Server) adminRouter() http.Handler {
 	r.Post("/identity-verifications", s.identityVerifications)
 	r.Post("/finalize-identity-verification", s.finalizeIdentityVerification)
 	r.Post("/deposit", s.createDeposit)
+	r.Post("/withdraw", s.createWithdrawal)
 
 	return r
 }
@@ -213,4 +243,55 @@ func (s *Server) createDeposit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondJSON(w, http.StatusCreated, depositView(d))
+}
+
+func (s *Server) createWithdrawal(w http.ResponseWriter, r *http.Request) {
+	var nw newWithdrawal
+
+	if err := json.NewDecoder(r.Body).Decode(&nw); err != nil {
+		respondErr(w, badRequestErr(err))
+		return
+	}
+
+	ctx := r.Context()
+	log := s.logger("createWithdrawal")
+
+	if err := nw.validate(); err != nil {
+		respondErr(w, badRequestErr(err))
+		return
+	}
+
+	wd := purse.Withdrawal{
+		UUID:      uuid.New(),
+		Amount:    nw.Amount,
+		Timestamp: time.Now(),
+		UserUUID:  nw.UserUUID,
+	}
+
+	u, ok, err := s.db.FetchBetUserByUUID(ctx, wd.UserUUID)
+	if err != nil {
+		log.Error().Err(err).Msg("cannot fetch bet user")
+		respondErr(w, internalErr())
+
+		return
+	}
+
+	if !ok {
+		respondErr(w, notFoundErr())
+		return
+	}
+
+	if err = u.Debit(wd.Amount); err != nil {
+		respondErr(w, badRequestErr(err))
+		return
+	}
+
+	if err = s.db.InsertWithdrawal(ctx, u, wd); err != nil {
+		log.Error().Err(err).Msg("cannot insert withdrawal")
+		respondErr(w, internalErr())
+
+		return
+	}
+
+	respondJSON(w, http.StatusCreated, withdrawalView(wd))
 }
