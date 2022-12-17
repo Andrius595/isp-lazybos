@@ -219,9 +219,22 @@ func (s *Server) identityVerifications(w http.ResponseWriter, r *http.Request) {
 	verViews := make([]identityVerification, len(verifications))
 
 	for i, v := range verifications {
+		bu, ok, err := s.db.FetchBetUserByUUID(ctx, v.UserUUID)
+		if err != nil {
+			log.Error().Err(err).Msg("cannot fetch user")
+			respondErr(w, internalErr())
+
+			return
+		}
+
+		if !ok {
+			log.Warn().Stringer("uuid", bu.UUID).Msg("cannot find user")
+			continue
+		}
+
 		verViews[i] = identityVerification{
 			UUID:                v.UUID,
-			UserUUID:            v.UserUUID,
+			User:                betUserView(bu),
 			Status:              v.Status,
 			IDPhotoBase64:       v.IDPhotoBase64,
 			PortraitPhotoBase64: v.PortraitPhotoBase64,
