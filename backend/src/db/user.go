@@ -147,7 +147,7 @@ func (d *DB) FetchUser(ctx context.Context, q sq.QueryerContext, c fetchUserCrit
 
 	qr, args := b.MustSql()
 
-	err := d.d.GetContext(ctx, &u, qr, args)
+	err := d.d.GetContext(ctx, &u, qr, args...)
 	switch err {
 	case nil:
 		return u, true, nil
@@ -192,7 +192,7 @@ func (d *DB) FetchIdentityVerification(ctx context.Context, q sq.QueryerContext,
 
 	var ver IdentityVerification
 
-	err := d.d.GetContext(ctx, &ver, qr, args)
+	err := d.d.GetContext(ctx, &ver, qr, args...)
 	switch err {
 	case nil:
 		return ver, true, nil
@@ -248,7 +248,7 @@ func (d *DB) FetchEmailVerification(ctx context.Context, q sq.QueryerContext, to
 
 	var ver EmailVerification
 
-	err := d.d.GetContext(ctx, &ver, qr, args)
+	err := d.d.GetContext(ctx, &ver, qr, args...)
 	switch err {
 	case nil:
 		return ver, true, nil

@@ -2,6 +2,8 @@ package db
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -96,10 +98,62 @@ func (d *DB) FetchEvents(ctx context.Context, q sq.QueryerContext) ([]Event, err
 	var ee []Event
 
 	if err := d.d.SelectContext(ctx, &ee, qr); err != nil {
+		fmt.Println("HERE")
 		return nil, err
 	}
 
 	return ee, nil
+}
+
+func (d *DB) FetchSelectionsByEvent(ctx context.Context, q sq.QueryerContext, id uuid.UUID) ([]EventSelection, error) {
+	b := sq.Select()
+
+	b = selectionQuery(b, "es").From("event_selection AS es").Where(sq.Eq{"es.event_uuid": id})
+	qr, args := b.MustSql()
+
+	var ss []EventSelection
+
+	if err := d.d.SelectContext(ctx, &ss, qr, args...); err != nil {
+		fmt.Println("HERE?")
+		return nil, err
+	}
+
+	return ss, nil
+}
+
+func (d *DB) FetchTeamByUUID(ctx context.Context, q sq.QueryerContext, id uuid.UUID) (Team, bool, error) {
+	b := sq.Select()
+
+	b = teamQuery(b, "tm").From("team AS tm").Where(sq.Eq{"tm.uuid": id})
+	qr, args := b.MustSql()
+
+	var tm Team
+
+	err := d.d.GetContext(ctx, &tm, qr, args...)
+	switch err {
+	case nil:
+		return tm, true, nil
+	case sql.ErrNoRows:
+		return Team{}, false, nil
+	default:
+		fmt.Println("HERE??")
+		return Team{}, false, err
+	}
+}
+
+func (d *DB) FetchPlayersByTeam(ctx context.Context, q sq.QueryerContext, id uuid.UUID) ([]TeamPlayer, error) {
+	b := sq.Select()
+
+	b = teamQuery(b, "tmp").From("team_player AS tmp").Where(sq.Eq{"tmp.team_uuid": id})
+	qr, args := b.MustSql()
+
+	var pp []TeamPlayer
+
+	if err := d.d.SelectContext(ctx, &pp, qr, args...); err != nil {
+		return nil, err
+	}
+
+	return pp, nil
 }
 
 func eventQuery(b sq.SelectBuilder, prefix string) sq.SelectBuilder {

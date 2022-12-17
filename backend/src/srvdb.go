@@ -303,6 +303,82 @@ func (a *serverDBAdapter) InsertEvent(ctx context.Context, ev bet.Event) error {
 	return tx.Commit()
 }
 
+func (a *serverDBAdapter) FetchEvents(ctx context.Context) ([]bet.Event, error) {
+	evs, err := a.db.FetchEvents(ctx, a.db.NoTX())
+	if err != nil {
+		return nil, err
+	}
+
+	var decodedEvs []bet.Event
+
+	for i := range evs {
+		home, ok, err := a.db.FetchTeamByUUID(ctx, a.db.NoTX(), evs[i].HomeTeamUUID)
+		if err != nil {
+			return nil, err
+		}
+
+		if !ok {
+			continue
+		}
+
+		away, ok, err := a.db.FetchTeamByUUID(ctx, a.db.NoTX(), evs[i].AwayTeamUUID)
+		if err != nil {
+			return nil, err
+		}
+
+		if !ok {
+			continue
+		}
+
+		homePlayers, err := a.db.FetchPlayersByTeam(ctx, a.db.NoTX(), home.UUID)
+		if err != nil {
+			return nil, err
+		}
+
+		awayPlayers, err := a.db.FetchPlayersByTeam(ctx, a.db.NoTX(), away.UUID)
+		if err != nil {
+			return nil, err
+		}
+
+		sels, err := a.db.FetchSelectionsByEvent(ctx, a.db.NoTX(), evs[i].UUID)
+		if err != nil {
+			return nil, err
+		}
+
+		var (
+			decodedSels []bet.EventSelection
+			decodedAway []bet.Player
+			decodedHome []bet.Player
+		)
+
+		for _, sel := range sels {
+			decodedSels = append(decodedSels, decodeSelection(sel))
+		}
+
+		for _, p := range awayPlayers {
+			decodedAway = append(decodedAway, decodePlayer(p))
+		}
+
+		for _, p := range homePlayers {
+			decodedHome = append(decodedHome, decodePlayer(p))
+		}
+
+		ev := bet.Event{
+			UUID:       evs[i].UUID,
+			Name:       evs[i].Name,
+			Selections: decodedSels,
+			BeginsAt:   evs[i].BeginsAt,
+			Finished:   evs[i].Finished,
+			HomeTeam:   decodeTeam(home, decodedHome),
+			AwayTeam:   decodeTeam(away, decodedAway),
+		}
+
+		decodedEvs = append(decodedEvs, ev)
+	}
+
+	return decodedEvs, nil
+}
+
 func decodeUser(u db.User) user.User {
 	return user.User{
 		UUID:             u.UUID,
@@ -430,6 +506,17 @@ func encodeEvent(ev bet.Event) db.Event {
 	}
 }
 
+func decodeEvent(ev db.Event, home bet.Team, away bet.Team) bet.Event {
+	return bet.Event{
+		UUID:     ev.UUID,
+		Name:     ev.Name,
+		BeginsAt: ev.BeginsAt,
+		Finished: ev.Finished,
+		HomeTeam: home,
+		AwayTeam: away,
+	}
+}
+
 func encodeSelection(sel bet.EventSelection, eventUUID uuid.UUID) db.EventSelection {
 	return db.EventSelection{
 		UUID:      sel.UUID,
@@ -441,10 +528,28 @@ func encodeSelection(sel bet.EventSelection, eventUUID uuid.UUID) db.EventSelect
 	}
 }
 
+func decodeSelection(sel db.EventSelection) bet.EventSelection {
+	return bet.EventSelection{
+		UUID:     sel.UUID,
+		Name:     sel.Name,
+		OddsHome: sel.OddsHome,
+		OddsAway: sel.OddsAway,
+		Winner:   bet.Winner(sel.Winner),
+	}
+}
+
 func encodeTeam(t bet.Team) db.Team {
 	return db.Team{
 		UUID: uuid.New(),
 		Name: t.Name,
+	}
+}
+
+func decodeTeam(t db.Team, pp []bet.Player) bet.Team {
+	return bet.Team{
+		UUID:    t.UUID,
+		Name:    t.Name,
+		Players: pp,
 	}
 }
 
@@ -453,5 +558,12 @@ func encodePlayer(tp bet.Player, teamUUID uuid.UUID) db.TeamPlayer {
 		UUID:     uuid.New(),
 		TeamUUID: teamUUID,
 		Name:     tp.Name,
+	}
+}
+
+func decodePlayer(tp db.TeamPlayer) bet.Player {
+	return bet.Player{
+		UUID: tp.UUID,
+		Name: tp.Name,
 	}
 }

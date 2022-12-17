@@ -62,6 +62,7 @@ func (s *Server) Run() error {
 	r.Mount("/bet-user", s.betUserRouter())
 	r.Mount("/user", s.userRouter())
 	r.Mount("/admin", s.adminRouter())
+	r.Mount("/betting", s.betRouter())
 
 	s.srv.Handler = r
 

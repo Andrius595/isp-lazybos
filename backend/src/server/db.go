@@ -43,4 +43,5 @@ type PurseDB interface {
 
 type BetDB interface {
 	InsertEvent(context.Context, bet.Event) error
+	FetchEvents(context.Context) ([]bet.Event, error)
 }
