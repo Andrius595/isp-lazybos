@@ -536,6 +536,11 @@ func (s *Server) resolveEventSelection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if sel.Winner.Finalized() {
+		respondOK(w)
+		return
+	}
+
 	sel.Winner = input.Winner
 
 	if err := s.resolver.Resolve(ctx, sel); err != nil {
