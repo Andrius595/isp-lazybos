@@ -56,6 +56,43 @@ CREATE TABLE IF NOT EXISTS withdrawal (
 	CONSTRAINT fk_user_uuid_user_user_uuid FOREIGN KEY(user_uuid) REFERENCES bet_user(user_uuid)
 );
 
+CREATE TABLE IF NOT EXISTS bet_event (
+	uuid TEXT PRIMARY KEY NOT NULL,
+	name TEXT NOT NULL,
+	begins_at TIMESTAMP NOT NULL,
+	finished BOOLEAN NOT NULL,
+
+	home_team_uuid TEXT NOT NULL,
+	away_team_uuid TEXT NOT NULL,
+
+	CONSTRAINT fk_home_team_uuid_team_uuid FOREIGN KEY(home_team_uuid) REFERENCES team(uuid),
+	CONSTRAINT fk_away_team_uuid_team_uuid FOREIGN KEY(away_team_uuid) REFERENCES team(uuid)
+);
+
+CREATE TABLE IF NOT EXISTS event_selection (
+	uuid TEXT PRIMARY KEY NOT NULL,
+	name TEXT NOT NULL,
+	odds_home NUMERIC NOT NULL,
+	odds_away NUMERIC NOT NULL,
+	winner TEXT NOT NULL,
+	event_uuid TEXT NOT NULL,
+
+	CONSTRAINT fk_event_uuid_event_uuid FOREIGN KEY(event_uuid) REFERENCES bet_event(uuid)
+);
+
+CREATE TABLE IF NOT EXISTS team (
+	uuid TEXT PRIMARY KEY NOT NULL,
+	name TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS team_player (
+	uuid TEXT PRIMARY KEY NOT NULL,
+	name TEXT NOT NULL,
+	team_uuid TEXT NOT NULL,
+
+	CONSTRAINT fk_team_uuid_team_uuid FOREIGN KEY(team_uuid) REFERENCES team(uuid)
+);
+
 -- +migrate Down
 DROP TABLE IF EXISTS user;
 DROP TABLE IF EXISTS bet_user;

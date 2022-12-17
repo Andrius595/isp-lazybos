@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/ramasauskas/ispbet/bet"
 	"github.com/ramasauskas/ispbet/db"
 	"github.com/ramasauskas/ispbet/purse"
 	"github.com/ramasauskas/ispbet/user"
@@ -238,6 +239,70 @@ func (a *serverDBAdapter) FetchBetUsers(ctx context.Context) ([]user.BetUser, er
 	return uut, nil
 }
 
+func (a *serverDBAdapter) InsertEvent(ctx context.Context, ev bet.Event) error {
+	homeTeam := encodeTeam(ev.HomeTeam)
+	awayTeam := encodeTeam(ev.AwayTeam)
+
+	dbEv := encodeEvent(ev)
+
+	var (
+		awayPlayers []db.TeamPlayer
+		homePlayers []db.TeamPlayer
+		selections  []db.EventSelection
+	)
+
+	for _, p := range ev.HomeTeam.Players {
+		homePlayers = append(homePlayers, encodePlayer(p, ev.HomeTeam.UUID))
+	}
+
+	for _, p := range ev.AwayTeam.Players {
+		homePlayers = append(awayPlayers, encodePlayer(p, ev.AwayTeam.UUID))
+	}
+
+	for _, s := range ev.Selections {
+		selections = append(selections, encodeSelection(s, ev.UUID))
+	}
+
+	tx, err := a.db.NewTX(ctx)
+	if err != nil {
+		return err
+	}
+
+	defer tx.Rollback()
+
+	if err := a.db.InsertTeam(ctx, tx, homeTeam); err != nil {
+		return err
+	}
+
+	if err := a.db.InsertTeam(ctx, tx, awayTeam); err != nil {
+		return err
+	}
+
+	for _, p := range awayPlayers {
+		if err := a.db.InsertTeamPlayer(ctx, tx, p); err != nil {
+			return err
+		}
+	}
+
+	for _, p := range homePlayers {
+		if err := a.db.InsertTeamPlayer(ctx, tx, p); err != nil {
+			return err
+		}
+	}
+
+	if err := a.db.InsertEvent(ctx, tx, dbEv); err != nil {
+		return err
+	}
+
+	for _, s := range selections {
+		if err := a.db.InsertEventSelection(ctx, tx, s); err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
+}
+
 func decodeUser(u db.User) user.User {
 	return user.User{
 		UUID:             u.UUID,
@@ -351,5 +416,42 @@ func decodeWithdrawal(wd db.Withdrawal) purse.Withdrawal {
 		Amount:    wd.Amount,
 		Timestamp: wd.Timestamp,
 		UserUUID:  wd.UserUUID,
+	}
+}
+
+func encodeEvent(ev bet.Event) db.Event {
+	return db.Event{
+		UUID:         ev.UUID,
+		Name:         ev.Name,
+		BeginsAt:     ev.BeginsAt,
+		Finished:     ev.Finished,
+		HomeTeamUUID: ev.HomeTeam.UUID,
+		AwayTeamUUID: ev.AwayTeam.UUID,
+	}
+}
+
+func encodeSelection(sel bet.EventSelection, eventUUID uuid.UUID) db.EventSelection {
+	return db.EventSelection{
+		UUID:      sel.UUID,
+		EventUUID: eventUUID,
+		Name:      sel.Name,
+		OddsHome:  sel.OddsHome,
+		OddsAway:  sel.OddsAway,
+		Winner:    string(sel.Winner),
+	}
+}
+
+func encodeTeam(t bet.Team) db.Team {
+	return db.Team{
+		UUID: uuid.New(),
+		Name: t.Name,
+	}
+}
+
+func encodePlayer(tp bet.Player, teamUUID uuid.UUID) db.TeamPlayer {
+	return db.TeamPlayer{
+		UUID:     uuid.New(),
+		TeamUUID: teamUUID,
+		Name:     tp.Name,
 	}
 }

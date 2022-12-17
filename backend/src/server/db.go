@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/ramasauskas/ispbet/bet"
 	"github.com/ramasauskas/ispbet/purse"
 	"github.com/ramasauskas/ispbet/user"
 )
@@ -12,6 +13,7 @@ type DB interface {
 	UserDB
 	EmailVerificationDB
 	PurseDB
+	BetDB
 }
 
 type UserDB interface {
@@ -37,4 +39,8 @@ type EmailVerificationDB interface {
 type PurseDB interface {
 	InsertDeposit(context.Context, user.BetUser, purse.Deposit) error
 	InsertWithdrawal(context.Context, user.BetUser, purse.Withdrawal) error
+}
+
+type BetDB interface {
+	InsertEvent(context.Context, bet.Event) error
 }

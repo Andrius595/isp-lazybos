@@ -8,10 +8,130 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"github.com/ramasauskas/ispbet/bet"
 	"github.com/ramasauskas/ispbet/purse"
 	"github.com/ramasauskas/ispbet/user"
 	"github.com/shopspring/decimal"
 )
+
+type newBetEvent struct {
+	Name       string `json:"name"`
+	Selections []struct {
+		Name     string          `json:"name"`
+		OddsHome decimal.Decimal `json:"odds_home"`
+		OddsAway decimal.Decimal `json:"odds_away"`
+	} `json:"selections"`
+	AwayTeam struct {
+		Name    string   `json:"name"`
+		Players []string `json:"players"`
+	} `json:"away_team"`
+	HomeTeam struct {
+		Name    string   `json:"name"`
+		Players []string `json:"players"`
+	} `json:"home_team"`
+	BeginsAt time.Time `json:"begins_at"`
+}
+
+func (be newBetEvent) validate() error {
+	if len(be.Selections) == 0 {
+		return errors.New("no selections provided")
+	}
+
+	if len(be.AwayTeam.Players) == 0 {
+		return errors.New("away team has no players")
+	}
+
+	if len(be.HomeTeam.Players) == 0 {
+		return errors.New("home team has no players")
+	}
+
+	return nil
+}
+
+type betEvent struct {
+	UUID       uuid.UUID           `json:"uuid"`
+	Name       string              `json:"name"`
+	Selections []betEventSelection `json:"selections"`
+	BeginsAt   time.Time           `json:"begins_at"`
+	Finished   bool                `json:"finished"`
+	HomeTeam   betEventTeam        `json:"home_team"`
+	AwayTeam   betEventTeam        `json:"away_team"`
+}
+
+func betEventView(e bet.Event) betEvent {
+	var selections []betEventSelection
+
+	for _, s := range e.Selections {
+		selections = append(selections, betEventSelection{
+			UUID:     s.UUID,
+			Name:     s.Name,
+			OddsHome: s.OddsHome,
+			OddsAway: s.OddsAway,
+			Winner:   s.Winner,
+		})
+	}
+
+	var (
+		homePlayers []betEventPlayer
+		awayPlayers []betEventPlayer
+	)
+
+	for _, p := range e.AwayTeam.Players {
+		awayPlayers = append(awayPlayers, betEventPlayer{
+			UUID: p.UUID,
+			Name: p.Name,
+		})
+	}
+
+	for _, p := range e.HomeTeam.Players {
+		homePlayers = append(homePlayers, betEventPlayer{
+			UUID: p.UUID,
+			Name: p.Name,
+		})
+	}
+
+	home := betEventTeam{
+		UUID:    e.HomeTeam.UUID,
+		Name:    e.HomeTeam.Name,
+		Players: homePlayers,
+	}
+
+	away := betEventTeam{
+		UUID:    e.HomeTeam.UUID,
+		Name:    e.HomeTeam.Name,
+		Players: awayPlayers,
+	}
+
+	return betEvent{
+		UUID:       e.UUID,
+		Name:       e.Name,
+		Selections: selections,
+		BeginsAt:   e.BeginsAt,
+		Finished:   e.Finished,
+		HomeTeam:   home,
+		AwayTeam:   away,
+	}
+}
+
+type betEventTeam struct {
+	UUID uuid.UUID `json:"uuid"`
+	Name string    `json:"name"`
+
+	Players []betEventPlayer `json:"players"`
+}
+
+type betEventPlayer struct {
+	UUID uuid.UUID `json:"uuid"`
+	Name string    `json:"name"`
+}
+
+type betEventSelection struct {
+	UUID     uuid.UUID       `json:"uuid"`
+	Name     string          `json:"name"`
+	OddsHome decimal.Decimal `json:"odds_home"`
+	OddsAway decimal.Decimal `json:"odds_away"`
+	Winner   bet.Winner      `json:"winner"`
+}
 
 type newDeposit struct {
 	Amount   decimal.Decimal `json:"amount"`
@@ -79,6 +199,7 @@ func (s *Server) adminRouter() http.Handler {
 	r.Post("/finalize-identity-verification", s.finalizeIdentityVerification)
 	r.Post("/deposit", s.createDeposit)
 	r.Post("/withdraw", s.createWithdrawal)
+	r.Post("/event", s.createEvent)
 
 	return r
 }
@@ -294,4 +415,77 @@ func (s *Server) createWithdrawal(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondJSON(w, http.StatusCreated, withdrawalView(wd))
+}
+
+func (s *Server) createEvent(w http.ResponseWriter, r *http.Request) {
+	var newEvent newBetEvent
+
+	if err := json.NewDecoder(r.Body).Decode(&newEvent); err != nil {
+		respondErr(w, badRequestErr(err))
+		return
+	}
+
+	if err := newEvent.validate(); err != nil {
+		respondErr(w, badRequestErr(err))
+		return
+	}
+
+	ev := bet.Event{
+		UUID:     uuid.New(),
+		Name:     newEvent.Name,
+		BeginsAt: newEvent.BeginsAt,
+	}
+
+	for _, s := range newEvent.Selections {
+		ev.Selections = append(ev.Selections, bet.EventSelection{
+			UUID:     uuid.New(),
+			Name:     s.Name,
+			OddsHome: s.OddsHome,
+			OddsAway: s.OddsAway,
+			Winner:   bet.WinnerTBD,
+		})
+	}
+
+	var (
+		homePlayers []bet.Player
+		awayPlayers []bet.Player
+	)
+
+	for _, p := range newEvent.HomeTeam.Players {
+		homePlayers = append(homePlayers, bet.Player{
+			UUID: uuid.New(),
+			Name: p,
+		})
+	}
+
+	for _, p := range newEvent.AwayTeam.Players {
+		awayPlayers = append(awayPlayers, bet.Player{
+			UUID: uuid.New(),
+			Name: p,
+		})
+	}
+
+	ev.AwayTeam = bet.Team{
+		UUID:    uuid.New(),
+		Name:    newEvent.AwayTeam.Name,
+		Players: awayPlayers,
+	}
+
+	ev.HomeTeam = bet.Team{
+		UUID:    uuid.New(),
+		Name:    newEvent.HomeTeam.Name,
+		Players: homePlayers,
+	}
+
+	ctx := r.Context()
+	log := s.logger("createEvent")
+
+	if err := s.db.InsertEvent(ctx, ev); err != nil {
+		log.Error().Err(err).Msg("cannot insert event")
+		respondErr(w, internalErr())
+
+		return
+	}
+
+	respondJSON(w, http.StatusOK, betEventView(ev))
 }
