@@ -18,6 +18,12 @@ CREATE TABLE IF NOT EXISTS bet_user (
 	CONSTRAINT fk_bet_user_user_uuid_user FOREIGN KEY(user_uuid) REFERENCES user(uuid)
 );
 
+CREATE TABLE IF NOT EXISTS admin_user (
+	user_uuid TEXT PRIMARY KEY NOT NULL,
+	role TEXT NOT NULL,
+	CONSTRAINT fk_bet_user_user_uuid_user FOREIGN KEY(user_uuid) REFERENCES user(uuid)
+);
+
 CREATE TABLE IF NOT EXISTS identity_verification (
 	uuid TEXT PRIMARY KEY NOT NULL,
 	user_uuid TEXT NOT NULL,

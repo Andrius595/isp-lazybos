@@ -198,13 +198,15 @@ func (w *newWithdrawal) validate() error {
 func (s *Server) adminRouter() http.Handler {
 	r := chi.NewRouter()
 
+	r.Use(s.sessions.Auth)
+
 	r.Get("/bet-users", s.betUsers)
 	r.Get("/identity-verifications", s.identityVerifications)
-	r.Post("/finalize-identity-verification", s.finalizeIdentityVerification)
-	r.Post("/deposit", s.createDeposit)
-	r.Post("/withdraw", s.createWithdrawal)
-	r.Post("/event", s.createEvent)
-	r.Post("/resolve", s.resolveEventSelection)
+	r.Post("/finalize-identity-verification", s.authorizeAdmin(user.RoleUsers, "finalize-identity", s.finalizeIdentityVerification))
+	r.Post("/deposit", s.authorizeAdmin(user.RoleUsers, "deposit", s.createDeposit))
+	r.Post("/withdraw", s.authorizeAdmin(user.RoleUsers, "withdraw", s.createWithdrawal))
+	r.Post("/event", s.authorizeAdmin(user.RoleMatches, "create-event", s.createEvent))
+	r.Post("/resolve", s.authorizeAdmin(user.RoleMatches, "resolve-event", s.resolveEventSelection))
 
 	return r
 }
@@ -251,7 +253,7 @@ func (s *Server) identityVerifications(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusOK, verViews)
 }
 
-func (s *Server) finalizeIdentityVerification(w http.ResponseWriter, r *http.Request) {
+func (s *Server) finalizeIdentityVerification(w http.ResponseWriter, r *http.Request, _ user.AdminUser) {
 	var input struct {
 		VerificationUUID uuid.UUID `json:"verification_uuid"`
 		Accept           bool      `json:"accept"`
@@ -333,7 +335,7 @@ func (s *Server) betUsers(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusOK, uuView)
 }
 
-func (s *Server) createDeposit(w http.ResponseWriter, r *http.Request) {
+func (s *Server) createDeposit(w http.ResponseWriter, r *http.Request, _ user.AdminUser) {
 	var nd newDeposit
 
 	if err := json.NewDecoder(r.Body).Decode(&nd); err != nil {
@@ -384,7 +386,7 @@ func (s *Server) createDeposit(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusCreated, depositView(d))
 }
 
-func (s *Server) createWithdrawal(w http.ResponseWriter, r *http.Request) {
+func (s *Server) createWithdrawal(w http.ResponseWriter, r *http.Request, _ user.AdminUser) {
 	var nw newWithdrawal
 
 	if err := json.NewDecoder(r.Body).Decode(&nw); err != nil {
@@ -435,7 +437,7 @@ func (s *Server) createWithdrawal(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusCreated, withdrawalView(wd))
 }
 
-func (s *Server) createEvent(w http.ResponseWriter, r *http.Request) {
+func (s *Server) createEvent(w http.ResponseWriter, r *http.Request, _ user.AdminUser) {
 	var newEvent newBetEvent
 
 	if err := json.NewDecoder(r.Body).Decode(&newEvent); err != nil {
@@ -509,7 +511,7 @@ func (s *Server) createEvent(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusOK, betEventView(ev))
 }
 
-func (s *Server) resolveEventSelection(w http.ResponseWriter, r *http.Request) {
+func (s *Server) resolveEventSelection(w http.ResponseWriter, r *http.Request, _ user.AdminUser) {
 	var input struct {
 		SelectionUUID uuid.UUID  `json:"selection_uuid"`
 		Winner        bet.Winner `json:"winner"`

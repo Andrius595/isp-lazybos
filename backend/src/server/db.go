@@ -14,6 +14,7 @@ type DB interface {
 	EmailVerificationDB
 	PurseDB
 	BetDB
+	AdminDB
 }
 
 type UserDB interface {
@@ -23,6 +24,8 @@ type UserDB interface {
 	InsertBetUser(context.Context, user.BetUser) error
 
 	FetchUserByUUID(context.Context, uuid.UUID) (user.User, bool, error)
+
+	FetchAdminUser(context.Context, uuid.UUID) (user.AdminUser, bool, error)
 
 	InsertBetUserIdentityVerification(context.Context, user.IdentityVerification) error
 	FetchIdentityVerification(context.Context, uuid.UUID) (user.IdentityVerification, bool, error)
@@ -45,4 +48,8 @@ type BetDB interface {
 	InsertEvent(context.Context, bet.Event) error
 	FetchSelection(context.Context, uuid.UUID) (bet.EventSelection, bool, error)
 	FetchEvents(context.Context) ([]bet.Event, error)
+}
+
+type AdminDB interface {
+	InsertActionLog(context.Context, user.AdminLog) error
 }

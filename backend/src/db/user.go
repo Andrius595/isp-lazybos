@@ -18,6 +18,11 @@ type BetUser struct {
 	Balance          decimal.Decimal `db:"betusr.balance"`
 }
 
+type AdminUser struct {
+	User
+	Role string `db:"admusr.role"`
+}
+
 type User struct {
 	UUID             uuid.UUID `db:"usr.uuid"`
 	Email            string    `db:"usr.email"`
@@ -157,6 +162,25 @@ func (d *DB) FetchUser(ctx context.Context, q sq.QueryerContext, c fetchUserCrit
 	}
 }
 
+func (d *DB) FetchAdminUser(ctx context.Context, q sq.QueryerContext, id uuid.UUID) (AdminUser, bool, error) {
+	b := sq.Select()
+
+	b = adminUserQuery(userQuery(b, "usr"), "admusr").From("admin_user AS admusr").InnerJoin("user usr ON usr.uuid=admusr.user_uuid").Where(sq.Eq{"usr.uuid": id})
+	qr, args := b.MustSql()
+
+	var adm AdminUser
+
+	err := d.d.GetContext(ctx, &adm, qr, args)
+	switch err {
+	case nil:
+		return adm, false, nil
+	case sql.ErrNoRows:
+		return AdminUser{}, false, nil
+	default:
+		return AdminUser{}, false, err
+	}
+}
+
 func (d *DB) InsertIdentityVerification(ctx context.Context, e sq.ExecerContext, ver IdentityVerification) error {
 	b := sq.Insert("identity_verification").SetMap(map[string]interface{}{
 		"uuid":                  ver.UUID,
@@ -293,6 +317,12 @@ func betUserQuery(b sq.SelectBuilder, prefix string) sq.SelectBuilder {
 	return b.Columns(
 		column(prefix, "identity_verified"),
 		column(prefix, "balance"),
+	)
+}
+
+func adminUserQuery(b sq.SelectBuilder, prefix string) sq.SelectBuilder {
+	return b.Columns(
+		column(prefix, "role"),
 	)
 }
 
