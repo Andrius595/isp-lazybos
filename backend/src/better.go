@@ -35,6 +35,13 @@ func (b *better) Bet(ctx context.Context, bt *bet.Bet, u *user.BetUser) (BetResp
 		}, nil
 	}
 
+	if err := bt.SelectionWinner.Validate(); err != nil {
+		return BetResponse{
+			Ok:           false,
+			ErrorMessage: err.Error(),
+		}, nil
+	}
+
 	if err := b.db.InsertBet(ctx, *bt, userCopy); err != nil {
 		return BetResponse{}, err
 	}

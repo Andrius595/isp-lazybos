@@ -26,6 +26,14 @@ type userBet struct {
 	SelectionUUID uuid.UUID       `json:"selection_uuid"`
 }
 
+func userBetView(b bet.Bet) userBet {
+	return userBet{
+		UUID:          b.UUID,
+		Stake:         b.Stake,
+		SelectionUUID: b.SelectionUUID,
+	}
+}
+
 type newBetUser struct {
 	Email     string `json:"email"`
 	Password  string `json:"password"`
@@ -308,7 +316,7 @@ func (s *Server) bet(w http.ResponseWriter, r *http.Request, u user.BetUser) {
 		return
 	}
 
-	respondJSON(w, http.StatusCreated, b)
+	respondJSON(w, http.StatusCreated, userBetView(b))
 }
 
 type BetResponse struct {
