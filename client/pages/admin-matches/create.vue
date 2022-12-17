@@ -17,7 +17,6 @@
                     <label for="sport">Sport</label>
                     <select   class="form-select mb-3">
                       <option disabled value ="">Select sport..</option>
-                      <!-- Sporto šakos -->
                     </select>
                     <label for="team1">Team A</label>
                     <select   class="form-select mb-3">
@@ -44,17 +43,19 @@
                             <input  type="number" name="name" placeholder="" class="form-control mb-2">
                             <label for="name">Odds team B</label>
                             <input  type="number" name="name" placeholder="" class="form-control mb-2">
-                            <button class="btn btn-primary btn-block mt-3" name="createMatch">Create match outcome</button>
+                            <button @click='isShowingOutcome = !isShowingOutcome' class="btn btn-primary btn-block mt-3" name="createMatch">Create match outcome</button>
                           </div>
                         </div>
                       </div>
 
                     </div>
                     <label style="margin-top:1rem"  for="outcomeselection">Match outcome</label>
-                    <select style="margin-top:1rem"   class="form-select mb-3">
+                    <select style="margin-top:1rem"  class="form-select mb-3" multiple>
                       <option disabled value ="">Select match outcome..</option>
-                      <!-- Baigtys -->
+                      <option value ="">test1</option>
+                      <option value ="">test2</option>
                     </select>
+                    <p style="font-size:0.8rem">Hold down the Ctrl (windows) or Command (Mac) button to select multiple outcomes.</p>
                     <button class="btn btn-success btn-block mt-3" name="createMatch">Create match</button>
                   </div>
                 </div>
@@ -96,7 +97,7 @@
                     <label for="date">Player's nationality</label>
                     <input  type="text" name="name" placeholder="" class="form-control mb-2">
                     <label for="team2">Player's team</label>
-                    <select   class="form-select mb-3">
+                    <select class="form-select mb-3">
                       <option disabled value ="">Select team..</option>
                       <!-- Komandos -->
                     </select>
@@ -111,6 +112,7 @@
                         <li class="list-group-item">Player5</li>
                       </ul>
                     </div>
+                    
                   </div>
                 </div>
             </div>
@@ -129,7 +131,6 @@ console.log(router.resolve(route))
 //
 const autoCoff = ref<boolean>(false)
 const isShowingOutcome = ref<boolean>(false)
-
 
 </script>
 
