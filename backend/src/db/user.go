@@ -124,7 +124,7 @@ func (d *DB) FetchBetUser(ctx context.Context, q sq.QueryerContext, c fetchUserC
 }
 
 func (d *DB) FetchBetUsers(ctx context.Context, q sq.QueryerContext) ([]BetUser, error) {
-	var b sq.SelectBuilder
+	b := sq.Select()
 
 	b = betUserQuery(userQuery(b, "usr"), "betusr").From("bet_user AS betusr").InnerJoin("user AS usr ON usr.uuid=betusr.user_uuid")
 
@@ -140,7 +140,7 @@ func (d *DB) FetchBetUsers(ctx context.Context, q sq.QueryerContext) ([]BetUser,
 }
 
 func (d *DB) FetchUser(ctx context.Context, q sq.QueryerContext, c fetchUserCriteria) (User, bool, error) {
-	var b sq.SelectBuilder
+	b := sq.Select()
 
 	b = c(userQuery(b, "usr").From("user AS usr"), "usr")
 	var u User
@@ -184,7 +184,7 @@ func (db *DB) UpdateIdentityVerification(ctx context.Context, e sq.ExecerContext
 }
 
 func (d *DB) FetchIdentityVerification(ctx context.Context, q sq.QueryerContext, id uuid.UUID) (IdentityVerification, bool, error) {
-	var b sq.SelectBuilder
+	b := sq.Select()
 
 	b = identityVerificatiosQuery(b, "idv").From("identity_verification AS idv").Where(sq.Eq{"idv.uuid": id})
 
@@ -204,7 +204,7 @@ func (d *DB) FetchIdentityVerification(ctx context.Context, q sq.QueryerContext,
 }
 
 func (d *DB) FetchIdentityVerifications(ctx context.Context, q sq.QueryerContext) ([]IdentityVerification, error) {
-	var b sq.SelectBuilder
+	b := sq.Select()
 
 	b = identityVerificatiosQuery(b, "idv").From("identity_verification AS idv")
 
@@ -240,7 +240,7 @@ func (d *DB) UpdateEmailVerification(ctx context.Context, e sq.ExecerContext, ve
 }
 
 func (d *DB) FetchEmailVerification(ctx context.Context, q sq.QueryerContext, token string) (EmailVerification, bool, error) {
-	var b sq.SelectBuilder
+	b := sq.Select()
 
 	b = emailVerificationQuery(b, "emailver").From("email_verification_token AS emailver").Where(sq.Eq{"emailver.token": token})
 
