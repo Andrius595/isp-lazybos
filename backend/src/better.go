@@ -54,6 +54,10 @@ func (b *better) Bet(ctx context.Context, bt *bet.Bet, u *user.BetUser) (BetResp
 }
 
 func (b *better) ResolveEventSelection(ctx context.Context, sel bet.EventSelection) error {
+	if !sel.Winner.Finalized() {
+		return nil
+	}
+
 	bets, err := b.db.FetchBetsBySelection(ctx, sel.UUID)
 	if err != nil {
 		return err

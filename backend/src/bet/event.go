@@ -26,6 +26,10 @@ func (w Winner) Validate() error {
 	}
 }
 
+func (w Winner) Finalized() bool {
+	return w == WinnerHome || w == WinnerAway
+}
+
 const (
 	WinnerHome Winner = "home"
 	WinnerAway Winner = "away"

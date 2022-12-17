@@ -24,13 +24,22 @@ type Server struct {
 	db       DB
 	log      zerolog.Logger
 	better   Better
+	resolver Resolver
 	sessions *sessionup.Manager
 	email    EmailSender
 
 	wg sync.WaitGroup
 }
 
-func NewServer(port uint, sessionStore sessionup.Store, better Better, email EmailSender, db DB, log zerolog.Logger) *Server {
+func NewServer(
+	port uint,
+	sessionStore sessionup.Store,
+	better Better,
+	resolver Resolver,
+	email EmailSender,
+	db DB,
+	log zerolog.Logger,
+) *Server {
 	srv := &http.Server{
 		Addr: fmt.Sprintf(":%d", port),
 	}
@@ -44,6 +53,7 @@ func NewServer(port uint, sessionStore sessionup.Store, better Better, email Ema
 		sessions: sessions,
 		email:    email,
 		better:   better,
+		resolver: resolver,
 	}
 }
 

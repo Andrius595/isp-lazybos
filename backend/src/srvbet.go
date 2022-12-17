@@ -23,3 +23,7 @@ func (adp *serverBetAdapter) Bet(ctx context.Context, b *bet.Bet, au *user.BetUs
 		ErrorMessage: resp.ErrorMessage,
 	}, nil
 }
+
+func (adp *serverBetAdapter) Resolve(ctx context.Context, sel bet.EventSelection) error {
+	return adp.better.ResolveEventSelection(ctx, sel)
+}

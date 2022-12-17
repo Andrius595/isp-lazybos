@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -507,19 +508,43 @@ func (s *Server) createEvent(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusOK, betEventView(ev))
 }
 
-//func (s *Server) resolveEventSelection(w http.ResponseWriter, r *http.Request) {
-//	var input struct {
-//		SelectionUUID uuid.UUID
-//		Winner        bet.Winner
-//	}
-//
-//	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-//		respondErr(w, badRequestErr(err))
-//		return
-//	}
-//
-//	ctx := r.Context()
-//	log := s.logger("resolveEventSelection")
-//
-//	//sel, ok, err := s.db.FetchSelection(ctx, input.SelectionUUID)
-//}
+func (s *Server) resolveEventSelection(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		SelectionUUID uuid.UUID
+		Winner        bet.Winner
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		respondErr(w, badRequestErr(err))
+		return
+	}
+
+	ctx := r.Context()
+	log := s.logger("resolveEventSelection")
+
+	sel, ok, err := s.db.FetchSelection(ctx, input.SelectionUUID)
+	if err != nil {
+		log.Error().Err(err).Msg("cannot fetch event selection")
+		respondErr(w, internalErr())
+
+		return
+	}
+
+	if !ok {
+		respondErr(w, notFoundErr())
+		return
+	}
+
+	if err := s.resolver.Resolve(ctx, sel); err != nil {
+		log.Error().Err(err).Msg("cannot resolve")
+		respondErr(w, internalErr())
+
+		return
+	}
+
+	respondOK(w)
+}
+
+type Resolver interface {
+	Resolve(context.Context, bet.EventSelection) error
+}
