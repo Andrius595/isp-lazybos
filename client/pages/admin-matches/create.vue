@@ -33,7 +33,7 @@
                       <input id ="odds_home" v-model.number="outcomeForm.odds_home" type="number" step="0.01" placeholder="" class="form-control mb-2">
                       <label>Odds away team</label>
                       <input id="odds_away" v-model.number="outcomeForm.odds_away" type="number" step="0.01" placeholder="" class="form-control mb-2">
-                      <p><input type="checkbox" id="checkbox" v-model="autoCoff" />
+                      <p><input type="checkbox" id="checkbox" v-model="outcomeForm.auto_odds" />
                         <label for="checkbox"> Automatic odds calculation</label>
                       </p>
                       <button @click="addOutcome" class="btn btn-primary btn-block mt-3">Create match outcome</button>
@@ -144,6 +144,7 @@ const emptyOutcomeForm = {
   name: '',
   odds_home: 0,
   odds_away: 0,
+  auto_odds: false,
 }
 const outcomeForm = ref({...emptyOutcomeForm})
 
