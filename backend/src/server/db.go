@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/ramasauskas/ispbet/bet"
 	"github.com/ramasauskas/ispbet/purse"
+	"github.com/ramasauskas/ispbet/report"
 	"github.com/ramasauskas/ispbet/user"
 	"github.com/shopspring/decimal"
 )
@@ -75,6 +76,7 @@ type ProfitReport struct {
 }
 
 type ReportDB interface {
+	InsertAutoReport(context.Context, report.AutoReport) error
 	FetchProfit(context.Context, ProfitOpts) (ProfitReport, error)
 	FetchBetReport(ctx context.Context, from, to time.Time) ([]bet.Bet, error)
 }

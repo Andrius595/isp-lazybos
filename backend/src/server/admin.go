@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/ramasauskas/ispbet/bet"
 	"github.com/ramasauskas/ispbet/purse"
+	"github.com/ramasauskas/ispbet/report"
 	"github.com/ramasauskas/ispbet/user"
 	"github.com/shopspring/decimal"
 )
@@ -245,6 +246,8 @@ func (s *Server) adminRouter() http.Handler {
 		r.Get("/bet-users", s.betUsers)
 		r.Get("/admin-logs", s.adminsLogs)
 		r.Get("/identity-verifications", s.identityVerifications)
+
+		r.Post("/auto-report", s.createAutoReport)
 
 		r.Post("/finalize-identity-verification", s.authorizeAdmin(user.RoleUsers, "finalize-identity", s.finalizeIdentityVerification))
 		r.Post("/deposit", s.authorizeAdmin(user.RoleUsers, "deposit", s.createDeposit))
@@ -652,6 +655,36 @@ func (s *Server) resolveEventSelection(w http.ResponseWriter, r *http.Request, _
 
 	if err := s.resolver.Resolve(ctx, sel); err != nil {
 		log.Error().Err(err).Msg("cannot resolve")
+		respondErr(w, internalErr())
+
+		return
+	}
+
+	respondOK(w)
+}
+
+func (s *Server) createAutoReport(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	log := s.logger("createAutoReport")
+
+	var input struct {
+		SendTo string `json:"send_to"`
+		Type   string `json:"type"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		respondErr(w, badRequestErr(err))
+		return
+	}
+
+	rep := report.AutoReport{
+		UUID:   uuid.New(),
+		Type:   report.ReportType(input.Type),
+		SendTo: input.SendTo,
+	}
+
+	if err := s.db.InsertAutoReport(ctx, rep); err != nil {
+		log.Error().Err(err).Msg("cannot insert auto report")
 		respondErr(w, internalErr())
 
 		return

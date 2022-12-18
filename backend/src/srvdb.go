@@ -9,6 +9,7 @@ import (
 	"github.com/ramasauskas/ispbet/bet"
 	"github.com/ramasauskas/ispbet/db"
 	"github.com/ramasauskas/ispbet/purse"
+	"github.com/ramasauskas/ispbet/report"
 	"github.com/ramasauskas/ispbet/server"
 	"github.com/ramasauskas/ispbet/user"
 )
@@ -476,6 +477,14 @@ func (a *serverDBAdapter) FetchBetReport(ctx context.Context, from, to time.Time
 	}
 
 	return bets, nil
+}
+
+func (a *serverDBAdapter) InsertAutoReport(ctx context.Context, r report.AutoReport) error {
+	return a.db.InsertAutoReport(ctx, a.db.NoTX(), db.AutoReport{
+		UUID:   r.UUID,
+		Type:   string(r.Type),
+		SendTo: r.SendTo,
+	})
 }
 
 func fillEvent(ctx context.Context, db *db.DB, tx db.TX, ev db.Event) (bet.Event, error) {
