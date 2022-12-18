@@ -4,9 +4,9 @@ import checkUserRole from "~/utils/checkUserRole";
 export default defineNuxtRouteMiddleware(async () => {
     const user = useCookie('user')
 
-    const isUser = checkUserRole(user.value, 'user')
+    const isSalesAdmin = checkUserRole(user.value, 'users')
 
-    if (!isUser) {
+    if (!isSalesAdmin) {
         return navigateTo({ name: Routes.Main })
     }
 })

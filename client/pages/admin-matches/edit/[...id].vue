@@ -39,7 +39,7 @@
 
 <script setup lang="ts">
 import AuthenticatedLayout from "~/layouts/AuthenticatedLayout.vue";
-import { useRoute } from "vue-router";ß
+import { useRoute } from "vue-router";
 import Routes from "~/types/routes";
 
 const route = useRoute()

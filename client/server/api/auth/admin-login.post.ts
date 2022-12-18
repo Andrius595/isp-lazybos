@@ -12,10 +12,11 @@ export default defineEventHandler(async (event) => {
         const value = nameValue.split('=')[1]
 
         setCookie(event, 'sessionup', value)
+        setCookie(event, 'user', JSON.stringify(res._data))
 
         response = { status: true, data:  res._data}
     } catch(e) {
-        response = { status: false, message: e.data.message}
+        response = { status: false, message: e.data?.message ?? 'Something went wrong'}
     }
 
     return response

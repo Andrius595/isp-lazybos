@@ -8,12 +8,7 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
           <ul class="navbar-nav mb-2 mb-lg-0">
-            <li class="nav-item">
-              <NuxtLink class="nav-link" :href="getRouteUrl(Routes.Auth.Login)">Prisijungimo langas</NuxtLink>
-            </li>
-            <li class="nav-item">
-              <NuxtLink class="nav-link" :href="getRouteUrl(Routes.Auth.Register)">Registracijos langas</NuxtLink>
-            </li>
+
           </ul>
 
         </div>
