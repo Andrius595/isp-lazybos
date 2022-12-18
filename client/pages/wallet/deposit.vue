@@ -2,6 +2,8 @@
   <div>
     <AuthenticatedLayout>
       <h1>Deposit Money</h1>
+      <div v-if="successMessage.length" class="text-success">{{ successMessage }}</div>
+      <div v-if="errorMessage.length" class="text-success">{{ errorMessage }}</div>
       <div class="d-flex gap-2">
         <div class="w-100">
           <div class="mb-3">
@@ -30,6 +32,7 @@
 <script setup lang="ts">
 import AuthenticatedLayout from "~/layouts/AuthenticatedLayout.vue";
 
+const successMessage = ref('')
 const errorMessage = ref('')
 const users = ref([])
 const amount = ref(0)
@@ -55,10 +58,13 @@ function handleUserSelect(event) {
 }
 
 async function handleDeposit() {
+  successMessage.value = ''
+  errorMessage.value = ''
+
   const response = await $fetch('/api/wallet/deposit', {
     method: 'POST',
     body: {
-      user_uuid: selectedUser?.uuid,
+      user_uuid: selectedUser.value?.uuid,
       amount: amount.value,
     }
   })
@@ -69,6 +75,7 @@ async function handleDeposit() {
     return
   }
 
+  successMessage.value = 'Deposit was successful!'
   users.value = response.data ?? []
 }
 

@@ -66,7 +66,7 @@ async function handleWithdraw() {
   const response = await $fetch('/api/wallet/withdraw', {
     method: 'POST',
     body: {
-      user_uuid: selectedUser?.uuid,
+      user_uuid: selectedUser.value?.uuid,
       amount: amount.value,
     }
   })
