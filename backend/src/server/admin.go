@@ -588,6 +588,16 @@ func (s *Server) resolveEventSelection(w http.ResponseWriter, r *http.Request, _
 		return
 	}
 
+	if err := input.Winner.Validate(); err != nil {
+		respondErr(w, badRequestErr(err))
+		return
+	}
+
+	if input.Winner == bet.WinnerTBD {
+		respondErr(w, badRequestErr(errors.New("winner cannot be tbd")))
+		return
+	}
+
 	ctx := r.Context()
 	log := s.logger("resolveEventSelection")
 
