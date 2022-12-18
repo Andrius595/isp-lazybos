@@ -130,15 +130,13 @@ import Routes from "~/types/routes";
 const autoCoff = ref<boolean>(false)
 const isShowingOutcome = ref<boolean>(false)
 
+const sportsOptions = ['football', 'basketball']
 
 const matchForm = ref({
   name: '',
-  sport: '',
+  sport: sportsOptions[0],
   begins_at: '',
 })
-
-
-const sportsOptions = ['football', 'basketball']
 
 const outcomeErrorMessage = ref('')
 const outcomes = ref([])

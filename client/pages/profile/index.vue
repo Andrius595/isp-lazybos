@@ -16,6 +16,9 @@
 import AuthenticatedLayout from "~/layouts/AuthenticatedLayout.vue";
 import Routes from "~/types/routes";
 import getRouteUrl from "~/utils/getRouteUrl";
+
+await $fetch('/api/auth/me', { method: 'POST' })
+await $fetch('/api/events/user-bets', { method: 'POST' })
 </script>
 
 <style scoped lang="scss">

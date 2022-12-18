@@ -1,15 +1,15 @@
 <template>
   <div>
     <AuthenticatedLayout>
-      <h1>Ataskaitų pasirinkimo langas</h1>
+      <h1>Select report</h1>
       <div class="d-flex">
         <ul class="list-group flex-shrink">
-          <NuxtLink class="list-group-item list-group-item-action" :href="getRouteUrl(Routes.Reports.Profit)">Pelningumo ataskaitos langas</NuxtLink>
-          <NuxtLink class="list-group-item list-group-item-action" :href="getRouteUrl(Routes.Reports.Matches)">Varžybų ataskaitos langas</NuxtLink>
-          <NuxtLink class="list-group-item list-group-item-action" :href="getRouteUrl(Routes.Reports.Taxes)">Mokesčių ataskaitos langas</NuxtLink>
-          <NuxtLink class="list-group-item list-group-item-action" :href="getRouteUrl(Routes.Reports.Users)">Vartotojų ataskaitos langas</NuxtLink>
-          <NuxtLink class="list-group-item list-group-item-action" :href="getRouteUrl(Routes.Reports.AdminsActions)">Administratorių veiksmų ataskaitos langas</NuxtLink>
-          <NuxtLink class="list-group-item list-group-item-action" :href="getRouteUrl(Routes.Reports.ScheduledReport)">Suplanuotos ataskaitos langas</NuxtLink>
+          <NuxtLink class="list-group-item list-group-item-action" :href="getRouteUrl(Routes.Reports.Profit)">Profit Report</NuxtLink>
+          <NuxtLink class="list-group-item list-group-item-action" :href="getRouteUrl(Routes.Reports.Matches)">Matches Report</NuxtLink>
+          <NuxtLink class="list-group-item list-group-item-action" :href="getRouteUrl(Routes.Reports.Taxes)">Taxes Report</NuxtLink>
+          <NuxtLink class="list-group-item list-group-item-action" :href="getRouteUrl(Routes.Reports.Users)">Users Report</NuxtLink>
+          <NuxtLink class="list-group-item list-group-item-action" :href="getRouteUrl(Routes.Reports.AdminsActions)">Administrators actions Report</NuxtLink>
+          <NuxtLink class="list-group-item list-group-item-action" :href="getRouteUrl(Routes.Reports.ScheduledReport)">Scheduled Report</NuxtLink>
         </ul>
       </div>
     </AuthenticatedLayout>
