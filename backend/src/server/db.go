@@ -76,4 +76,5 @@ type ProfitReport struct {
 
 type ReportDB interface {
 	FetchProfit(context.Context, ProfitOpts) (ProfitReport, error)
+	FetchBetReport(ctx context.Context, from, to time.Time) ([]bet.Bet, error)
 }

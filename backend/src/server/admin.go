@@ -243,7 +243,7 @@ func (s *Server) adminRouter() http.Handler {
 	r.Group(func(r chi.Router) {
 		r.Use(s.sessions.Auth)
 		r.Get("/bet-users", s.betUsers)
-		//r.Get("/admin-logs", s.adminsLogs)
+		r.Get("/admin-logs", s.adminsLogs)
 		r.Get("/identity-verifications", s.identityVerifications)
 
 		r.Post("/finalize-identity-verification", s.authorizeAdmin(user.RoleUsers, "finalize-identity", s.finalizeIdentityVerification))
@@ -256,6 +256,8 @@ func (s *Server) adminRouter() http.Handler {
 			r.Get("/profit", s.profitReport)
 			r.Get("/admins", s.admins)
 			r.Get("/admin-logs/{uuid}", s.adminLogs)
+			r.Get("/user-bets/{uuid}", s.userBets)
+			r.Get("/bets", s.betReport)
 		})
 	})
 
@@ -747,6 +749,110 @@ func (s *Server) adminLogs(w http.ResponseWriter, r *http.Request) {
 
 	for _, l := range ll {
 		views = append(views, adminLogView(l))
+	}
+
+	respondJSON(w, http.StatusOK, views)
+}
+
+func (s *Server) userBets(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	log := s.logger("userBets")
+
+	id, err := uuid.Parse(chi.URLParamFromCtx(ctx, "uuid"))
+	if err != nil {
+		respondErr(w, badRequestErr(err))
+		return
+	}
+
+	bets, err := s.db.FetchUserBets(ctx, id)
+	if err != nil {
+		log.Error().Err(err).Msg("cannot fetch user bets")
+		respondErr(w, internalErr())
+
+		return
+	}
+
+	views := make([]userBet, 0)
+
+	for _, b := range bets {
+		sel, ok, err := s.db.FetchSelection(ctx, b.SelectionUUID)
+		if err != nil {
+			log.Error().Err(err).Msg("cannot fetch event")
+			continue
+		}
+
+		if !ok {
+			continue
+		}
+
+		ev, ok, err := s.db.FetchEvent(ctx, sel.EventUUID)
+		if err != nil {
+			log.Error().Err(err).Msg("cannot fetch event")
+			respondErr(w, internalErr())
+
+			return
+		}
+
+		if !ok {
+			continue
+		}
+
+		betView := userBetView(b, betEventView(ev), betEventSelectionView(sel))
+		views = append(views, betView)
+	}
+
+	respondJSON(w, http.StatusOK, views)
+}
+
+func (s *Server) betReport(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	log := s.logger("betReport")
+
+	var input struct {
+		From time.Time
+		To   time.Time
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		respondErr(w, badRequestErr(err))
+		return
+	}
+
+	bb, err := s.db.FetchBetReport(ctx, input.From, input.To)
+	if err != nil {
+		log.Error().Err(err).Msg("cannot fetch bet report")
+		respondErr(w, internalErr())
+
+		return
+	}
+
+	var views []userBet
+
+	for _, b := range bb {
+		sel, ok, err := s.db.FetchSelection(ctx, b.SelectionUUID)
+		if err != nil {
+			log.Error().Err(err).Msg("cannot fetch event")
+			continue
+		}
+
+		if !ok {
+			continue
+		}
+
+		ev, ok, err := s.db.FetchEvent(ctx, sel.EventUUID)
+		if err != nil {
+			log.Error().Err(err).Msg("cannot fetch event")
+			respondErr(w, internalErr())
+
+			return
+		}
+
+		if !ok {
+			continue
+		}
+
+		betView := userBetView(b, betEventView(ev), betEventSelectionView(sel))
+		views = append(views, betView)
 	}
 
 	respondJSON(w, http.StatusOK, views)

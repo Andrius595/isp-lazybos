@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/ramasauskas/ispbet/bet"
@@ -460,6 +461,21 @@ func (a *serverDBAdapter) FetchAdminUsers(ctx context.Context) ([]user.AdminUser
 	}
 
 	return decoded, nil
+}
+
+func (a *serverDBAdapter) FetchBetReport(ctx context.Context, from, to time.Time) ([]bet.Bet, error) {
+	bb, err := a.db.FetchBetReport(ctx, from, to)
+	if err != nil {
+		return nil, err
+	}
+
+	var bets []bet.Bet
+
+	for _, b := range bb {
+		bets = append(bets, decodeBet(b))
+	}
+
+	return bets, nil
 }
 
 func fillEvent(ctx context.Context, db *db.DB, tx db.TX, ev db.Event) (bet.Event, error) {

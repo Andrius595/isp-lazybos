@@ -10,6 +10,12 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+type AutoReport struct {
+	UUID   uuid.UUID `db:"ar.uuid"`
+	Type   string    `db:"ar.report_type"`
+	SendTo string    `db:"ar.send_to"`
+}
+
 type ProfitOpts struct {
 	From time.Time
 	To   time.Time
@@ -101,4 +107,80 @@ func (d *DB) FetchAdminLog(ctx context.Context, id uuid.UUID) ([]AdminLog, error
 	}
 
 	return ll, nil
+}
+
+func (d *DB) FetchBetReport(ctx context.Context, from, to time.Time) ([]Bet, error) {
+	b := sq.Select()
+
+	b = betQuery(b, "bt").From("bet AS bt").Where(
+		sq.And{
+			sq.GtOrEq{"bt.timestamp": from},
+			sq.Lt{"bt.timestamp": to},
+		},
+	)
+	qr, args := b.MustSql()
+
+	var bb []Bet
+
+	if err := d.d.SelectContext(ctx, &bb, qr, args...); err != nil {
+		return nil, err
+	}
+
+	return bb, nil
+}
+
+func (d *DB) FetchTotalDeposits(ctx context.Context, from, to time.Time) (decimal.Decimal, error) {
+	b := sq.Select("IFNULL(SUM(amount), 0) AS amnt").From("deposit").Where(
+		sq.And{
+			sq.GtOrEq{"timestamp": from},
+			sq.Lt{"timestamp": to},
+		},
+	)
+	qr, args := b.MustSql()
+
+	var resp struct {
+		Amount decimal.Decimal `db:"amnt"`
+	}
+
+	err := d.d.GetContext(ctx, &resp, qr, args...)
+	switch err {
+	case nil:
+		return resp.Amount, nil
+	default:
+		return decimal.Zero, err
+	}
+}
+
+func (d *DB) InsertAutoReport(ctx context.Context, e sq.ExecerContext, ar AutoReport) error {
+	b := sq.Insert("auto_report").SetMap(map[string]interface{}{
+		"uuid":        ar.UUID,
+		"report_type": ar.Type,
+		"send_to":     ar.SendTo,
+	})
+
+	_, err := sq.ExecContextWith(ctx, e, b)
+	return err
+}
+
+func (d *DB) FetchAutoReports(ctx context.Context) ([]AutoReport, error) {
+	b := sq.Select()
+
+	b = autoReportQuery(b, "ar").From("auto_report AS ar")
+	qr, args := b.MustSql()
+
+	var aa []AutoReport
+
+	if err := d.d.SelectContext(ctx, &aa, qr, args...); err != nil {
+		return nil, err
+	}
+
+	return aa, nil
+}
+
+func autoReportQuery(b sq.SelectBuilder, prefix string) sq.SelectBuilder {
+	return b.Columns(
+		column(prefix, "uuid"),
+		column(prefix, "report_type"),
+		column(prefix, "send_to"),
+	)
 }

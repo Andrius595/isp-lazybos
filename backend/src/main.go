@@ -5,6 +5,7 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/ramasauskas/ispbet/autoreport"
 	"github.com/ramasauskas/ispbet/db"
 	"github.com/ramasauskas/ispbet/server"
 	"github.com/rs/zerolog"
@@ -43,6 +44,17 @@ func main() {
 		better: better,
 	}
 
+	reportDB := &reportDB{
+		db: database,
+	}
+
+	reportWorker := autoreport.NewWorker(reportDB, &dummyEmail{}, log.With().Str("goroutine", "email").Logger())
+	if err := reportWorker.Work(); err != nil {
+		mainLog.Fatal().Err(err).Msg("cannot run worker")
+	}
+
+	mainLog.Info().Msg("started report worked")
+
 	srvLog := log.With().Str("goroutine", "server").Logger()
 	srv := server.NewServer(8080, sessionStore, &betSrv, &betSrv, &dummyEmail{
 		log: log.With().Str("goroutine", "email").Logger(),
@@ -78,6 +90,10 @@ func main() {
 	if err = database.Close(); err != nil {
 		mainLog.Error().Err(err).Msg("cannot close database")
 	}
+
+	reportWorker.Close()
+
+	mainLog.Info().Msg("stopped report worker")
 
 	mainLog.Info().Msg("application gracefully closed")
 }
