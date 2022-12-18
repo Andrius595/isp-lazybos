@@ -68,6 +68,7 @@ type userBet struct {
 	Odds      decimal.Decimal   `json:"odds"`
 	State     string            `json:"status"`
 	Selection betEventSelection `json:"selection"`
+	Winner    string            `json:"winner"`
 	Event     betEvent          `json:"event"`
 	Timestamp time.Time         `json:"timestamp"`
 }
@@ -80,6 +81,7 @@ func userBetView(b bet.Bet, ev betEvent, sel betEventSelection) userBet {
 		State:     string(b.State),
 		Event:     ev,
 		Selection: sel,
+		Winner:    string(b.SelectionWinner),
 		Timestamp: b.Timestamp,
 	}
 }
