@@ -29,7 +29,7 @@
             <li v-if="isUsersAdmin" class="nav-item">
               <NuxtLink class="nav-link" :class="{ active: isRouteActive(Routes.Wallet.Deposit)}" :href="getRouteUrl(Routes.Wallet.Deposit)">Deposit</NuxtLink>
             </li>
-            <li v-if="isUsersAdmin" class="nav-item">
+            <li v-if="isUser" class="nav-item">
               <NuxtLink class="nav-link" :class="{ active: isRouteActive(Routes.AutomaticBets.List)}" :href="getRouteUrl(Routes.AutomaticBets.List)">Automatic Bets</NuxtLink>
             </li>
             <li v-if="isUsersAdmin" class="nav-item">
@@ -75,9 +75,7 @@ const isMatchesAdmin = computed(() => checkUserRole(user.value, 'matches'))
 const isSalesAdmin = computed(() => checkUserRole(user.value, 'sales'))
 
 async function handleLogout() {
-  const res = await $fetch('/api/auth/logout', { method: 'POST' })
-
-  console.log('aa', res)
+  await $fetch('/api/auth/logout', { method: 'POST' })
 
   return navigateTo({ name: Routes.Auth.Login })
 }
