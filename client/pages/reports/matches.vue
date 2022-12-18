@@ -34,7 +34,7 @@
             <tbody class="table-secondary">
             <tr v-for="(bet, index) in bets" :key="index">
               <td>{{ bet.stake }} Eur</td>
-              <td>{{ bet.timestamp }}</td>
+              <td>{{ formatDate(bet.timestamp) }}</td>
               <td>{{ bet.odds }}</td>
               <td>{{ bet.status == "tbd" ? "To be determined" : bet.status }}</td>
               <td>{{ bet.winner == "away" ? bet.event.away_team.name : bet.event.home_team.name }}</td>
@@ -49,6 +49,7 @@
 
 <script setup lang="ts">
 import AuthenticatedLayout from "~/layouts/AuthenticatedLayout.vue";
+import formatDate from "~/utils/formatDate";
 
 const dateFrom = ref('')
 const dateTo = ref('')
