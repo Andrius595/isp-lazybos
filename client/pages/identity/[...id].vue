@@ -5,7 +5,7 @@
       <h5>User information:</h5>
       <ul class="list-group my-2">
         <li class="list-group-item">{{ `Name: ${request.user.first_name} ${request.user.first_name}` }}</li>
-        <li class="list-group-item">{{ `Email: ${request.user.first_name} ${request.user.first_name}` }}</li>
+        <li class="list-group-item">{{ `Email: ${request.user.email}` }}</li>
         <li class="list-group-item">{{ `Created at: ${formatDate(request.created_at)}` }}</li>
       </ul>
       <div class="d-flex gap-2 border border-dark rounded p-4">
