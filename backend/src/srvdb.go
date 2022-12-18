@@ -8,7 +8,9 @@ import (
 	"github.com/ramasauskas/ispbet/bet"
 	"github.com/ramasauskas/ispbet/db"
 	"github.com/ramasauskas/ispbet/purse"
+	"github.com/ramasauskas/ispbet/server"
 	"github.com/ramasauskas/ispbet/user"
+	"github.com/shopspring/decimal"
 )
 
 type serverDBAdapter struct {
@@ -413,6 +415,18 @@ func (a *serverDBAdapter) FetchEvent(ctx context.Context, id uuid.UUID) (bet.Eve
 	}
 
 	return filled, true, nil
+}
+
+func (a *serverDBAdapter) FetchProfit(ctx context.Context, po server.ProfitOpts) (decimal.Decimal, error) {
+	pr, err := a.db.ProfitReport(ctx, db.ProfitOpts{
+		From: po.From,
+		To:   po.To,
+	})
+	if err != nil {
+		return decimal.Zero, err
+	}
+
+	return pr.Amount, nil
 }
 
 func fillEvent(ctx context.Context, db *db.DB, tx db.TX, ev db.Event) (bet.Event, error) {

@@ -36,8 +36,10 @@ type Bet struct {
 	UUID            uuid.UUID       `db:"bt.uuid"`
 	UserUUID        uuid.UUID       `db:"bt.user_uuid"`
 	SelectionUUID   uuid.UUID       `db:"bt.selection_uuid"`
+	Timestamp       time.Time       `db:"bt.timestamp"`
 	SelectionWinner string          `db:"bt.selection_winner"`
 	Stake           decimal.Decimal `db:"bt.stake"`
+	Odds            decimal.Decimal `db:"bt.odds"`
 	State           string          `db:"bt.state"`
 }
 
@@ -230,7 +232,9 @@ func (d *DB) InsertBet(ctx context.Context, e sq.ExecerContext, bt Bet) error {
 		"selection_uuid":   bt.SelectionUUID,
 		"selection_winner": bt.SelectionWinner,
 		"stake":            bt.Stake,
+		"odds":             bt.Odds,
 		"state":            bt.State,
+		"timestamp":        bt.Timestamp,
 	})
 
 	_, err := sq.ExecContextWith(ctx, e, b)
@@ -324,6 +328,8 @@ func betQuery(b sq.SelectBuilder, prefix string) sq.SelectBuilder {
 		column(prefix, "selection_uuid"),
 		column(prefix, "selection_winner"),
 		column(prefix, "stake"),
+		column(prefix, "odds"),
 		column(prefix, "state"),
+		column(prefix, "timestamp"),
 	)
 }

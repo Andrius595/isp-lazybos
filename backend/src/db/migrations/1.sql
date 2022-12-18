@@ -109,9 +109,11 @@ CREATE TABLE IF NOT EXISTS bet (
 	uuid TEXT PRIMARY KEY NOT NULL,
 	user_uuid TEXT NOT NULL,
 	stake NUMERIC NOT NULL,
+	odds NUMERIC NOT NULL,
 	state TEXT NOT NULL,
 	selection_uuid TEXT NOT NULL,
 	selection_winner TEXT NOT NULL,
+	timestamp TIMESTAMP NOT NULL,
 
 	CONSTRAINT fk_bet_selection_uuid_bet_selection_uuid FOREIGN KEY(selection_uuid) REFERENCES event_selection(uuid),
 	CONSTRAINT fk_user_id_user_user_uuid FOREIGN KEY(user_uuid) REFERENCES bet_user(user_uuid)

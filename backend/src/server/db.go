@@ -2,11 +2,13 @@ package server
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/ramasauskas/ispbet/bet"
 	"github.com/ramasauskas/ispbet/purse"
 	"github.com/ramasauskas/ispbet/user"
+	"github.com/shopspring/decimal"
 )
 
 type DB interface {
@@ -15,6 +17,7 @@ type DB interface {
 	PurseDB
 	BetDB
 	AdminDB
+	ReportDB
 }
 
 type UserDB interface {
@@ -56,4 +59,13 @@ type BetDB interface {
 type AdminDB interface {
 	InsertAdminLog(context.Context, user.AdminLog) error
 	FetchAdminLogs(context.Context) ([]user.AdminLog, error)
+}
+
+type ProfitOpts struct {
+	From time.Time
+	To   time.Time
+}
+
+type ReportDB interface {
+	FetchProfit(context.Context, ProfitOpts) (decimal.Decimal, error)
 }

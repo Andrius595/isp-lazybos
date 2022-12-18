@@ -252,6 +252,9 @@ func (s *Server) adminRouter() http.Handler {
 		r.Post("/event", s.authorizeAdmin(user.RoleMatches, "create-event", s.createEvent))
 		r.Post("/resolve", s.authorizeAdmin(user.RoleMatches, "resolve-event", s.resolveEventSelection))
 
+		r.Route("/report", func(r chi.Router) {
+			r.Get("/profit", s.profitReport)
+		})
 	})
 
 	return r
@@ -671,6 +674,38 @@ func (s *Server) adminLogs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondJSON(w, http.StatusOK, views)
+}
+
+func (s *Server) profitReport(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	log := s.logger("adminLog")
+
+	var input struct {
+		From time.Time
+		To   time.Time
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		respondErr(w, badRequestErr(err))
+		return
+	}
+
+	profit, err := s.db.FetchProfit(ctx, ProfitOpts{
+		From: input.From,
+		To:   input.To,
+	})
+	if err != nil {
+		log.Error().Err(err).Msg("cannot fetch profit report")
+		respondErr(w, internalErr())
+
+		return
+	}
+
+	respondJSON(w, http.StatusOK, struct {
+		Profit decimal.Decimal `json:"profit"`
+	}{
+		Profit: profit,
+	})
 }
 
 type Resolver interface {

@@ -1,6 +1,8 @@
 package bet
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 )
@@ -19,7 +21,9 @@ type Bet struct {
 	SelectionUUID   uuid.UUID
 	SelectionWinner Winner
 	Stake           decimal.Decimal
+	Odds            decimal.Decimal
 	State           BetState
+	Timestamp       time.Time
 }
 
 func (b *Bet) Resolve(winner Winner) {

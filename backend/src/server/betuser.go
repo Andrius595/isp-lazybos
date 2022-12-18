@@ -23,18 +23,22 @@ type newUserBet struct {
 type userBet struct {
 	UUID      uuid.UUID         `json:"uuid"`
 	Stake     decimal.Decimal   `json:"stake"`
+	Odds      decimal.Decimal   `json:"odds"`
 	State     string            `json:"status"`
 	Selection betEventSelection `json:"selection"`
 	Event     betEvent          `json:"event"`
+	Timestamp time.Time         `json:"timestamp"`
 }
 
 func userBetView(b bet.Bet, ev betEvent, sel betEventSelection) userBet {
 	return userBet{
 		UUID:      b.UUID,
 		Stake:     b.Stake,
+		Odds:      b.Odds,
 		State:     string(b.State),
 		Event:     ev,
 		Selection: sel,
+		Timestamp: b.Timestamp,
 	}
 }
 
@@ -305,6 +309,7 @@ func (s *Server) bet(w http.ResponseWriter, r *http.Request, u user.BetUser) {
 		SelectionWinner: bet.Winner(nb.Winner),
 		Stake:           nb.Stake,
 		State:           bet.BetStateTBD,
+		Timestamp:       time.Now(),
 	}
 
 	ctx := r.Context()
@@ -321,6 +326,12 @@ func (s *Server) bet(w http.ResponseWriter, r *http.Request, u user.BetUser) {
 	if !ok {
 		respondErr(w, notFoundErr())
 		return
+	}
+
+	if b.SelectionWinner == bet.WinnerAway {
+		b.Odds = sel.OddsAway
+	} else if b.SelectionWinner == bet.WinnerHome {
+		b.Odds = sel.OddsHome
 	}
 
 	ev, ok, err := s.db.FetchEvent(ctx, sel.EventUUID)
