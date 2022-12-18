@@ -13,10 +13,10 @@ import (
 )
 
 type AdminLog struct {
-	UUID      uuid.UUID
-	AdminUUID uuid.UUID
-	Action    string
-	Timestamp time.Time
+	UUID      uuid.UUID `db:"admlog.uuid"`
+	AdminUUID uuid.UUID `db:"admlog.admin_uuid"`
+	Action    string    `db:"admlog.action"`
+	Timestamp time.Time `db:"admlog.timestamp"`
 }
 
 type BetUser struct {
@@ -300,12 +300,36 @@ func (d *DB) InsertAdminLog(ctx context.Context, e sq.ExecerContext, lg AdminLog
 	return err
 }
 
+func (d *DB) FetchAdminLogs(ctx context.Context, q sq.QueryerContext) ([]AdminLog, error) {
+	b := sq.Select()
+
+	b = adminLogQuery(b, "admlog").From("admin_log AS admlog")
+	qr, _ := b.MustSql()
+
+	var ll []AdminLog
+
+	if err := d.d.SelectContext(ctx, &ll, qr); err != nil {
+		return nil, err
+	}
+
+	return ll, nil
+}
+
 func column(prefix, name string) string {
 	return fmt.Sprintf("%s.%s AS `%s.%s`", prefix, name, prefix, name)
 }
 
 func columnPredicate(prefix, name string) string {
 	return fmt.Sprintf("%s.%s", prefix, name)
+}
+
+func adminLogQuery(b sq.SelectBuilder, prefix string) sq.SelectBuilder {
+	return b.Columns(
+		column(prefix, "uuid"),
+		column(prefix, "admin_uuid"),
+		column(prefix, "action"),
+		column(prefix, "timestamp"),
+	)
 }
 
 func userQuery(b sq.SelectBuilder, prefix string) sq.SelectBuilder {

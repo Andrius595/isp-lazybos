@@ -15,6 +15,22 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+type adminLog struct {
+	UUID      uuid.UUID `json:"uuid"`
+	AdminUUID uuid.UUID `json:"admin_uuid"`
+	Action    string    `json:"action"`
+	Timestamp time.Time `json:"timestamp"`
+}
+
+func adminLogView(l user.AdminLog) adminLog {
+	return adminLog{
+		UUID:      l.UUID,
+		AdminUUID: l.AdminUUID,
+		Action:    l.Action,
+		Timestamp: l.Timestamp,
+	}
+}
+
 type adminUser struct {
 	UUID          uuid.UUID `json:"uuid"`
 	Email         string    `json:"email"`
@@ -223,6 +239,7 @@ func (s *Server) adminRouter() http.Handler {
 	r.Group(func(r chi.Router) {
 		r.Use(s.sessions.Auth)
 		r.Get("/bet-users", s.betUsers)
+		r.Get("/admin-logs", s.adminLogs)
 		r.Get("/identity-verifications", s.identityVerifications)
 		r.Post("/finalize-identity-verification", s.authorizeAdmin(user.RoleUsers, "finalize-identity", s.finalizeIdentityVerification))
 		r.Post("/deposit", s.authorizeAdmin(user.RoleUsers, "deposit", s.createDeposit))
@@ -629,6 +646,26 @@ func (s *Server) resolveEventSelection(w http.ResponseWriter, r *http.Request, _
 	}
 
 	respondOK(w)
+}
+
+func (s *Server) adminLogs(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	log := s.logger("adminLog")
+
+	ll, err := s.db.FetchAdminLogs(ctx)
+	if err != nil {
+		log.Error().Err(err).Msg("cannot fetch admin logs")
+		respondErr(w, internalErr())
+		return
+	}
+
+	views := make([]adminLog, 0)
+
+	for _, l := range ll {
+		views = append(views, adminLogView(l))
+	}
+
+	respondJSON(w, http.StatusOK, views)
 }
 
 type Resolver interface {

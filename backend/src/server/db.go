@@ -53,4 +53,5 @@ type BetDB interface {
 
 type AdminDB interface {
 	InsertAdminLog(context.Context, user.AdminLog) error
+	FetchAdminLogs(context.Context) ([]user.AdminLog, error)
 }

@@ -367,6 +367,21 @@ func (a *serverDBAdapter) InsertAdminLog(ctx context.Context, lg user.AdminLog) 
 	return a.db.InsertAdminLog(ctx, a.db.NoTX(), encodeAdminLog(lg))
 }
 
+func (a *serverDBAdapter) FetchAdminLogs(ctx context.Context) ([]user.AdminLog, error) {
+	logs, err := a.db.FetchAdminLogs(ctx, a.db.NoTX())
+	if err != nil {
+		return nil, err
+	}
+
+	var ll []user.AdminLog
+
+	for _, l := range logs {
+		ll = append(ll, decodeAdminLog(l))
+	}
+
+	return ll, nil
+}
+
 func fillEvent(ctx context.Context, db *db.DB, tx db.TX, ev db.Event) (bet.Event, error) {
 	home, ok, err := db.FetchTeamByUUID(ctx, tx, ev.HomeTeamUUID)
 	if err != nil {
@@ -432,6 +447,15 @@ func fillEvent(ctx context.Context, db *db.DB, tx db.TX, ev db.Event) (bet.Event
 
 func encodeAdminLog(lg user.AdminLog) db.AdminLog {
 	return db.AdminLog{
+		UUID:      lg.UUID,
+		AdminUUID: lg.AdminUUID,
+		Action:    lg.Action,
+		Timestamp: lg.Timestamp,
+	}
+}
+
+func decodeAdminLog(lg db.AdminLog) user.AdminLog {
+	return user.AdminLog{
 		UUID:      lg.UUID,
 		AdminUUID: lg.AdminUUID,
 		Action:    lg.Action,
