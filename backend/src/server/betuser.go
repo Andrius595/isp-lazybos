@@ -184,6 +184,7 @@ func (s *Server) betUserRouter() http.Handler {
 	r.Route("/autobet", func(r chi.Router) {
 		r.Use(s.sessions.Auth)
 
+		r.Get("/", s.withBetUser(s.autoBets))
 		r.Post("/", s.withBetUser(s.insertAutoBet))
 		r.Delete("/{uuid}", s.withBetUser(s.deleteAutoBet))
 	})
@@ -437,6 +438,27 @@ func (s *Server) bets(w http.ResponseWriter, r *http.Request, u user.BetUser) {
 	}
 
 	respondJSON(w, http.StatusOK, betViews)
+}
+
+func (s *Server) autoBets(w http.ResponseWriter, r *http.Request, u user.BetUser) {
+	ctx := r.Context()
+	log := s.logger("autoBets")
+
+	bb, err := s.db.FetchUserAutoBets(ctx, u.UUID)
+	if err != nil {
+		log.Error().Err(err).Msg("cannot fetch auto bets")
+		respondErr(w, internalErr())
+
+		return
+	}
+
+	views := make([]autoBet, 0)
+
+	for _, b := range bb {
+		views = append(views, autoBetView(b))
+	}
+
+	respondJSON(w, http.StatusOK, views)
 }
 
 func (s *Server) insertAutoBet(w http.ResponseWriter, r *http.Request, u user.BetUser) {

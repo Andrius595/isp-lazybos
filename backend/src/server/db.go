@@ -59,6 +59,7 @@ type BetDB interface {
 
 	InsertAutoBet(context.Context, autobet.AutoBet) error
 	DeleteAutoBet(context.Context, uuid.UUID) error
+	FetchUserAutoBets(context.Context, uuid.UUID) ([]autobet.AutoBet, error)
 }
 
 type AdminDB interface {

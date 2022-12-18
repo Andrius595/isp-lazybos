@@ -501,6 +501,26 @@ func (a *serverDBAdapter) DeleteAutoBet(ctx context.Context, id uuid.UUID) error
 	return a.db.DeleteAutoBet(ctx, a.db.NoTX(), id)
 }
 
+func (a *serverDBAdapter) FetchUserAutoBets(ctx context.Context, id uuid.UUID) ([]autobet.AutoBet, error) {
+	bb, err := a.db.FetchUserAutoBets(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	var bbe []autobet.AutoBet
+
+	for _, b := range bb {
+		bbe = append(bbe, autobet.AutoBet{
+			UUID:            b.UUID,
+			HighRisk:        b.HighRisk,
+			UserUUID:        b.UserUUID,
+			BalanceFraction: b.BalanceFraction,
+		})
+	}
+
+	return bbe, nil
+}
+
 func fillEvent(ctx context.Context, db *db.DB, tx db.TX, ev db.Event) (bet.Event, error) {
 	home, ok, err := db.FetchTeamByUUID(ctx, tx, ev.HomeTeamUUID)
 	if err != nil {

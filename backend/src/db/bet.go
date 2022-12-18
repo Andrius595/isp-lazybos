@@ -350,6 +350,21 @@ func (d *DB) FetchAutoBets(ctx context.Context) ([]AutoBet, error) {
 	return bb, nil
 }
 
+func (d *DB) FetchUserAutoBets(ctx context.Context, id uuid.UUID) ([]AutoBet, error) {
+	b := sq.Select()
+
+	b = autoBetQuery(b, "ab").From("auto_bet AS ab").Where(sq.Eq{"ab.user_uuid": id})
+	qr, args := b.MustSql()
+
+	var bb []AutoBet
+
+	if err := d.d.SelectContext(ctx, &bb, qr, args...); err != nil {
+		return nil, err
+	}
+
+	return bb, nil
+}
+
 func (d *DB) InsertAutoBet(ctx context.Context, e sq.ExecerContext, ab AutoBet) error {
 	b := sq.Insert("auto_bet").SetMap(map[string]interface{}{
 		"uuid":             ab.UUID,
