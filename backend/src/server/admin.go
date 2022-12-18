@@ -84,6 +84,18 @@ func (be newBetEvent) validate() error {
 		return errors.New("home team has no players")
 	}
 
+	if be.BeginsAt.Before(time.Now()) {
+		return errors.New("begins at cannot be before now")
+	}
+
+	if len(be.Name) == 0 {
+		return errors.New("name not provided")
+	}
+
+	if len(be.Sport) == 0 {
+		return errors.New("sport not provided")
+	}
+
 	return nil
 }
 
@@ -675,6 +687,17 @@ func (s *Server) createAutoReport(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		respondErr(w, badRequestErr(err))
 		return
+	}
+
+	if input.SendTo == "" {
+		respondErr(w, badRequestErr(errors.New("no send email provided")))
+		return
+	}
+
+	switch input.Type {
+	case "profit", "deposit":
+	default:
+		respondErr(w, badRequestErr(errors.New("type must be profit or debit")))
 	}
 
 	rep := report.AutoReport{
