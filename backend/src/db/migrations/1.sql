@@ -128,7 +128,7 @@ CREATE TABLE IF NOT EXISTS admin_log (
 	CONSTRAINT fk_admin_uuid_admin_user_uuid FOREIGN KEY(admin_uuid) REFERENCES admin_user(user_uuid)
 );
 
-CREATE TABLE IF NOT EXISTS scheduled_report (
+CREATE TABLE IF NOT EXISTS auto_report (
 	uuid TEXT PRIMARY KEY NOT NULL,
 	report_type TEXT NOT NULL,
 	send_to TEXT NOT NULL

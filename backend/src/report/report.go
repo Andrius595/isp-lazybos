@@ -6,7 +6,7 @@ type ReportType string
 
 const (
 	ReportTypeDeposit ReportType = "deposit"
-	ReportTypeProfit  ReportType = "deposit"
+	ReportTypeProfit  ReportType = "profit"
 )
 
 type AutoReport struct {

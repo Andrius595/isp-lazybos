@@ -28,7 +28,7 @@ func NewWorker(db DB, sender EmailSender, log zerolog.Logger) *Worker {
 }
 
 func (w *Worker) Work() error {
-	err := w.cr.AddFunc("* * * * *", func() {
+	err := w.cr.AddFunc("*/10 * * * *", func() {
 		w.log.Info().Msg("performing auto reports")
 		rr, err := w.db.FetchAutoReports(context.Background())
 		if err != nil {
@@ -43,6 +43,11 @@ func (w *Worker) Work() error {
 			}
 		}
 	})
+	if err != nil {
+		return err
+	}
+
+	w.cr.Start()
 
 	return err
 }

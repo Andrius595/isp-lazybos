@@ -48,7 +48,11 @@ func main() {
 		db: database,
 	}
 
-	reportWorker := autoreport.NewWorker(reportDB, &dummyEmail{}, log.With().Str("goroutine", "email").Logger())
+	dummyEm := &dummyEmail{
+		log: log.With().Str("goroutine", "auto_report").Logger(),
+	}
+
+	reportWorker := autoreport.NewWorker(reportDB, dummyEm, log.With().Str("goroutine", "email").Logger())
 	if err := reportWorker.Work(); err != nil {
 		mainLog.Fatal().Err(err).Msg("cannot run worker")
 	}
@@ -56,9 +60,7 @@ func main() {
 	mainLog.Info().Msg("started report worked")
 
 	srvLog := log.With().Str("goroutine", "server").Logger()
-	srv := server.NewServer(8080, sessionStore, &betSrv, &betSrv, &dummyEmail{
-		log: log.With().Str("goroutine", "email").Logger(),
-	}, dbAdapter, srvLog)
+	srv := server.NewServer(8080, sessionStore, &betSrv, &betSrv, dummyEm, dbAdapter, srvLog)
 
 	doneCh := make(chan struct{}, 1)
 	interCh := make(chan os.Signal, 1)
