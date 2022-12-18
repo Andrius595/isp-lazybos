@@ -8,6 +8,12 @@
 
 <script setup lang="ts">
 import AuthenticatedLayout from "~/layouts/AuthenticatedLayout.vue";
+
+await fetchBets()
+
+async function fetchBets() {
+  await $fetch('/api/events/user-bets', { method: 'POST' })
+}
 </script>
 <style scoped lang="scss">
 

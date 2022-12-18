@@ -19,7 +19,7 @@
           <td>{{ match.finished ? 'Finished' : 'In progress' }}</td>
           <td>{{ formatDate(match.begins_at) }}</td>
           <td>
-            <div class="btn btn-primary" @click="handleBetButton(match.uuid)">Bet</div>
+            <div v-if="!match.finished" class="btn btn-primary" @click="handleBetButton(match.uuid)">Bet</div>
           </td>
         </tr>
         </tbody>
