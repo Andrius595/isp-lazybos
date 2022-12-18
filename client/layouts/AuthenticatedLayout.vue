@@ -63,6 +63,7 @@
 <script setup lang="ts">
 import Routes from "~/types/routes";
 import getRouteUrl from "~/utils/getRouteUrl";
+import isRouteActive from "~/utils/isRouteActive";
 import checkUserRole from "~/utils/checkUserRole";
 
 const user = computed(() => (useCookie('user')).value)
