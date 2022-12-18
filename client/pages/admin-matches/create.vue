@@ -89,7 +89,6 @@
                         <li v-for="(player, index) in homeTeamForm.players" :key="index" class="list-group-item">{{ `${player.first_name} ${player.last_name}`}}</li>
                       </ul>
                     </div>
-                    <button class="btn btn-success btn-block mt-3" :disabled="homeTeamForm.players.length === 0">Create Home Team</button>
                   </div>
                   <div class="tab-pane" id="teamB" role="tabpanel" aria-labelledby="teamB-tab">
                     <label>Team's name</label>
@@ -114,8 +113,6 @@
                         <li v-for="(player, index) in awayTeamForm.players" :key="index" class="list-group-item">{{ `${player.first_name} ${player.last_name}`}}</li>
                       </ul>
                     </div>
-                    <!-- if player list empty button disabled -->
-                    <button class="btn btn-success btn-block mt-3" :disabled="awayTeamForm.players.length === 0">Create Away Team</button>
                   </div>
                 </div>
               </div>
