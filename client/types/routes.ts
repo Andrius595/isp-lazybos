@@ -19,7 +19,8 @@ const Routes = {
     List: 'admin-matches',
     RemoveConfirmation: 'admin-matches-remove-confirmation',
     EndConfirmation: 'admin-matches-end-confirmation',
-    Create: 'admin-matches-create'
+    Create: 'admin-matches-create',
+    Edit: 'admin-matches-edit'
   },
   Bets: {
     List: 'bets',

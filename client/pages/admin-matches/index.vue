@@ -24,6 +24,7 @@
                                         <th scope="row">1</th>
                                         <td>Name</td>
                                         <td>In progress</td>
+
                                     </tr>
                                     <tr class="collapse" id="outcomeRow">
                                         <td id="nohover" colspan="3">
@@ -34,6 +35,9 @@
                                                 <th scope="col">Winner</th>
                                                 <th scope="col">Pick winner</th>
                                                 <th scope="col">Actions</th>
+                                                <th scope="col">
+                                                    <NuxtLink name="editmatch" class="btn btn-info btn-sm" :href="getRouteUrl(Routes.AdminMatches.Edit)">Edit match</NuxtLink>
+                                                </th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -56,7 +60,7 @@
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    <NuxtLink style="margin-right:1rem" name="endmatch" class="btn btn-warning btn-sm" :href="getRouteUrl(Routes.AdminMatches.EndConfirmation)">End match</NuxtLink>
+                                                    <NuxtLink style="margin-right:1rem; margin-bottom:1rem;" name="endmatch" class="btn btn-warning btn-sm" :href="getRouteUrl(Routes.AdminMatches.EndConfirmation)">End match</NuxtLink>
                                                     <NuxtLink class="btn btn-danger btn-sm" name="terminatematch" :href="getRouteUrl(Routes.AdminMatches.RemoveConfirmation)">Terminate match</NuxtLink>
                                                 </td>
                                             </tr>
@@ -78,7 +82,7 @@
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    <NuxtLink style="margin-right:1rem" name="endmatch" class="btn btn-warning btn-sm" :href="getRouteUrl(Routes.AdminMatches.EndConfirmation)">End match</NuxtLink>
+                                                    <NuxtLink style="margin-right:1rem; margin-bottom:1rem;" name="endmatch" class="btn btn-warning btn-sm" :href="getRouteUrl(Routes.AdminMatches.EndConfirmation)">End match</NuxtLink>
                                                     <NuxtLink class="btn btn-danger btn-sm" name="terminatematch" :href="getRouteUrl(Routes.AdminMatches.RemoveConfirmation)">Terminate match</NuxtLink>
                                                 </td>
                                             </tr>
@@ -103,10 +107,15 @@
                                                 <th scope="col">Winner</th>
                                                 <th scope="col">Pick winner</th>
                                                 <th scope="col">Actions</th>
+                                                <th scope="col">
+                                                    <NuxtLink name="editmatch" class="btn btn-info btn-sm" :href="getRouteUrl(Routes.AdminMatches.Edit)">Edit match</NuxtLink>
+                                                </th>
                                             </tr>
                                         </thead>
                                         <tbody>
+                                            
                                             <tr>
+                                                
                                                 <td>Outcome name 1</td>
                                                 <td>Team A won</td>
                                                 <td>
@@ -125,7 +134,7 @@
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    <NuxtLink style="margin-right:1rem" name="endmatch" class="btn btn-warning btn-sm" :href="getRouteUrl(Routes.AdminMatches.EndConfirmation)">End match</NuxtLink>
+                                                    <NuxtLink style="margin-right:1rem; margin-bottom:1rem;" name="endmatch" class="btn btn-warning btn-sm" :href="getRouteUrl(Routes.AdminMatches.EndConfirmation)">End match</NuxtLink>
                                                     <NuxtLink class="btn btn-danger btn-sm" name="terminatematch" :href="getRouteUrl(Routes.AdminMatches.RemoveConfirmation)">Terminate match</NuxtLink>
                                                 </td>
                                             </tr>
@@ -147,7 +156,7 @@
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    <NuxtLink style="margin-right:1rem" name="endmatch" class="btn btn-warning btn-sm" :href="getRouteUrl(Routes.AdminMatches.EndConfirmation)">End match</NuxtLink>
+                                                    <NuxtLink style="margin-right:1rem; margin-bottom:1rem;" name="endmatch" class="btn btn-warning btn-sm" :href="getRouteUrl(Routes.AdminMatches.EndConfirmation)">End match</NuxtLink>
                                                     <NuxtLink class="btn btn-danger btn-sm" name="terminatematch" :href="getRouteUrl(Routes.AdminMatches.RemoveConfirmation)">Terminate match</NuxtLink>
                                                 </td>
                                             </tr>
@@ -174,13 +183,13 @@ import AuthenticatedLayout from "~/layouts/AuthenticatedLayout.vue";
 import Routes from "~/types/routes";
 import getRouteUrl from "~/utils/getRouteUrl";
 
-{{
-    
-}}
+
 </script>
 <style scoped lang="scss">
 
 #nohover:hover {
     box-shadow: none;
 }
+
+
 </style>
