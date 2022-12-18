@@ -19,10 +19,6 @@
                   <option disabled value="">Select sport..</option>ß
                   <option v-for="(sportOption, index) in sportsOptions" :key="index" :value="sportOption">{{ sportOption }}</option>
                 </select>
-
-                <p><input type="checkbox" id="checkbox" v-model="autoCoff" />
-                  <label for="checkbox"> Automatic odds calculation</label>
-                </p>
                 <div class="row">
                   <div class="col-sm">
                     <button @click='isShowingOutcome = !isShowingOutcome' class="btn btn-primary btn-block mt-3">Add match outcome</button>
@@ -34,9 +30,12 @@
                       <label>Outcome name</label>
                       <input v-model="outcomeForm.name" type="text" placeholder="" class="form-control mb-2">
                       <label>Odds home team</label>
-                      <input v-model.number="outcomeForm.odds_home" type="number" step="0.01" placeholder="" class="form-control mb-2">
+                      <input id ="odds_home" v-model.number="outcomeForm.odds_home" type="number" step="0.01" placeholder="" class="form-control mb-2">
                       <label>Odds away team</label>
-                      <input v-model.number="outcomeForm.odds_away" type="number" step="0.01" placeholder="" class="form-control mb-2">
+                      <input id="odds_away" v-model.number="outcomeForm.odds_away" type="number" step="0.01" placeholder="" class="form-control mb-2">
+                      <p><input type="checkbox" id="checkbox" v-model="autoCoff" />
+                        <label for="checkbox"> Automatic odds calculation</label>
+                      </p>
                       <button @click="addOutcome" class="btn btn-primary btn-block mt-3">Create match outcome</button>
                     </div>
                   </div>
@@ -70,7 +69,7 @@
                     <label>Team's name</label>
                     <input v-model="homeTeamForm.name" type="text" placeholder="" class="form-control mb-2">
                     <label>Team's country</label>
-                    <input v-model="homeTeamForm.country" type="text" placeholder="" class="form-control mb-2">
+                    <input v-model="homeTeamForm.country" type="text"  placeholder="" class="form-control mb-2">
                     <label>Team's league</label>
                     <input v-model="homeTeamForm.league" type="text" placeholder="" class="form-control mb-2">
                     <hr />
