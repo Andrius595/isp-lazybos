@@ -40,6 +40,7 @@ const users = ref([])
 const amount = ref(0)
 const selectedUser = ref(null)
 
+
 await fetchUsers()
 
 
@@ -56,6 +57,8 @@ async function fetchUsers() {
 }
 
 function handleUserSelect(event) {
+  successMessage.value = ''
+  errorMessage.value = ''
   selectedUser.value = users.value.find((user) => user.uuid === event.target.value) ?? null
 }
 
@@ -70,15 +73,14 @@ async function handleWithdraw() {
       amount: amount.value,
     }
   })
-
+  console.log(selectedUser.value?.uuid)
   if (!response.status) {
     errorMessage.value = response.message
 
     return
   }
-
   successMessage.value = 'Withdraw was successful'
-  selectedUser.value = null
+  //selectedUser.value = null
 
   await fetchUsers()
 }
@@ -89,10 +91,10 @@ watch(
       if (newAmount < 0) {
         amount.value = Math.max(amount.value, 0)
       }
-
       amount.value = Math.min(amount.value, selectedUser.value.balance)
     }
 )
+
 </script>
 
 <style scoped lang="scss">

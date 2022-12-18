@@ -22,7 +22,6 @@
               <thead style="background-color: #9a9a9a;">
               <tr>
                 <th scope="col">Date</th>
-                <th scope="col">IP address</th>
                 <th scope="col">Action type</th>
               </tr>
               </thead>
