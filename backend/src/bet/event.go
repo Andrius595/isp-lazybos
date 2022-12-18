@@ -19,7 +19,7 @@ type Winner string
 
 func (w Winner) Validate() error {
 	switch w {
-	case WinnerHome, WinnerAway, WinnerTBD:
+	case WinnerHome, WinnerAway, WinnerTBD, WinnnerNone:
 		return nil
 	default:
 		return errors.New("invalid winner set, must be home, away or tbd")
