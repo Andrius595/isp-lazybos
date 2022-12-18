@@ -308,6 +308,14 @@ func (a *serverDBAdapter) InsertEvent(ctx context.Context, ev bet.Event) error {
 	return tx.Commit()
 }
 
+func (a *serverDBAdapter) UpdateEvent(ctx context.Context, ev bet.Event) error {
+	return a.db.UpdateEvent(ctx, a.db.NoTX(), encodeEvent(ev))
+}
+
+func (a *serverDBAdapter) UpdateSelection(ctx context.Context, sel bet.EventSelection) error {
+	return a.db.UpdateSelection(ctx, a.db.NoTX(), encodeSelection(sel, sel.EventUUID))
+}
+
 func (a *serverDBAdapter) FetchEvents(ctx context.Context) ([]bet.Event, error) {
 	evs, err := a.db.FetchEvents(ctx, a.db.NoTX(), db.EventNotFinished())
 	if err != nil {
@@ -403,6 +411,24 @@ func (a *serverDBAdapter) FetchUserBets(ctx context.Context, id uuid.UUID) ([]be
 
 func (a *serverDBAdapter) FetchEvent(ctx context.Context, id uuid.UUID) (bet.Event, bool, error) {
 	ev, ok, err := a.db.FetchEvent(ctx, a.db.NoTX(), id)
+	if err != nil {
+		return bet.Event{}, false, err
+	}
+
+	if !ok {
+		return bet.Event{}, false, nil
+	}
+
+	filled, err := fillEvent(ctx, a.db, a.db.NoTX(), ev)
+	if err != nil {
+		return bet.Event{}, false, err
+	}
+
+	return filled, true, nil
+}
+
+func (a *serverDBAdapter) FetchEventBySelection(ctx context.Context, id uuid.UUID) (bet.Event, bool, error) {
+	ev, ok, err := a.db.FetchEventBySelection(ctx, a.db.NoTX(), id)
 	if err != nil {
 		return bet.Event{}, false, err
 	}

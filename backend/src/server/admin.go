@@ -52,11 +52,30 @@ func adminUserView(u user.AdminUser) adminUser {
 	}
 }
 
+type updateBetEvent struct {
+	UUID       uuid.UUID `json:"uuid"`
+	Name       string    `json:"name"`
+	Sport      string    `json:"sport"`
+	Selections []struct {
+		UUID     uuid.UUID       `json:"uuid"`
+		Name     string          `json:"name"`
+		AutoOdds bool            `json:"auto_odds"`
+		OddsHome decimal.Decimal `json:"odds_home"`
+		OddsAway decimal.Decimal `json:"odds_away"`
+	} `json:"selections"`
+	BeginsAt time.Time `json:"begins_at"`
+}
+
+func (ud updateBetEvent) validate() error {
+	return nil
+}
+
 type newBetEvent struct {
 	Name       string `json:"name"`
 	Sport      string `json:"sport"`
 	Selections []struct {
 		Name     string          `json:"name"`
+		AutoOdds bool            `json:"auto_odds"`
 		OddsHome decimal.Decimal `json:"odds_home"`
 		OddsAway decimal.Decimal `json:"odds_away"`
 	} `json:"selections"`
@@ -265,6 +284,7 @@ func (s *Server) adminRouter() http.Handler {
 		r.Post("/deposit", s.authorizeAdmin(user.RoleUsers, "deposit", s.createDeposit))
 		r.Post("/withdraw", s.authorizeAdmin(user.RoleUsers, "withdraw", s.createWithdrawal))
 		r.Post("/event", s.authorizeAdmin(user.RoleMatches, "create-event", s.createEvent))
+		r.Put("/event", s.authorizeAdmin(user.RoleMatches, "update-event", s.updateEvent))
 		r.Post("/resolve", s.authorizeAdmin(user.RoleMatches, "resolve-event", s.resolveEventSelection))
 
 		r.Route("/report", func(r chi.Router) {
@@ -572,6 +592,7 @@ func (s *Server) createEvent(w http.ResponseWriter, r *http.Request, _ user.Admi
 			UUID:     uuid.New(),
 			Name:     s.Name,
 			OddsHome: s.OddsHome,
+			AutoOdds: s.AutoOdds,
 			OddsAway: s.OddsAway,
 			Winner:   bet.WinnerTBD,
 		})
@@ -612,6 +633,71 @@ func (s *Server) createEvent(w http.ResponseWriter, r *http.Request, _ user.Admi
 	log := s.logger("createEvent")
 
 	if err := s.db.InsertEvent(ctx, ev); err != nil {
+		log.Error().Err(err).Msg("cannot insert event")
+		respondErr(w, internalErr())
+
+		return
+	}
+
+	respondJSON(w, http.StatusOK, betEventView(ev))
+}
+
+func (s *Server) updateEvent(w http.ResponseWriter, r *http.Request, _ user.AdminUser) {
+	var updateEvent updateBetEvent
+
+	if err := json.NewDecoder(r.Body).Decode(&updateEvent); err != nil {
+		respondErr(w, badRequestErr(err))
+		return
+	}
+
+	if err := updateEvent.validate(); err != nil {
+		respondErr(w, badRequestErr(err))
+		return
+	}
+
+	ctx := r.Context()
+	log := s.logger("updateEvent")
+
+	ev, ok, err := s.db.FetchEvent(ctx, updateEvent.UUID)
+	if err != nil {
+		log.Error().Err(err).Msg("cannot fetch event")
+		respondErr(w, internalErr())
+
+		return
+	}
+
+	if !ok {
+		respondErr(w, notFoundErr())
+		return
+	}
+
+	for i := range ev.Selections {
+		for _, sel := range updateEvent.Selections {
+			if sel.UUID.String() == ev.Selections[i].EventUUID.String() {
+				sell := bet.EventSelection{
+					UUID:      sel.UUID,
+					EventUUID: ev.UUID,
+					Name:      sel.Name,
+					AutoOdds:  sel.AutoOdds,
+					OddsHome:  sel.OddsHome,
+					OddsAway:  sel.OddsAway,
+				}
+
+				if err := s.db.UpdateSelection(ctx, sell); err != nil {
+					log.Error().Err(err).Msg("cannot update selection")
+					respondErr(w, internalErr())
+
+					return
+				}
+
+				ev.Selections[i] = sell
+			}
+		}
+	}
+
+	ev.Name = updateEvent.Name
+
+	if err := s.db.UpdateEvent(ctx, ev); err != nil {
 		log.Error().Err(err).Msg("cannot insert event")
 		respondErr(w, internalErr())
 
@@ -741,8 +827,8 @@ func (s *Server) profitReport(w http.ResponseWriter, r *http.Request) {
 	log := s.logger("adminLog")
 
 	var input struct {
-		From time.Time
-		To   time.Time
+		From time.Time `json:"from"`
+		To   time.Time `json:"to"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -865,8 +951,8 @@ func (s *Server) betReport(w http.ResponseWriter, r *http.Request) {
 	log := s.logger("betReport")
 
 	var input struct {
-		From time.Time
-		To   time.Time
+		From time.Time `json:"from"`
+		To   time.Time `json:"to"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
