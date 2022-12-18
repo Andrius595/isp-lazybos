@@ -293,6 +293,7 @@ func (d *DB) UpdateBet(ctx context.Context, e sq.ExecerContext, bt Bet) error {
 func (d *DB) UpdateEvent(ctx context.Context, e sq.ExecerContext, ev Event) error {
 	b := sq.Update("event").SetMap(map[string]interface{}{
 		"finished": ev.Finished,
+		"name":     ev.Name,
 	}).Where(sq.Eq{"uuid": ev.UUID})
 
 	_, err := sq.ExecContextWith(ctx, e, b)
@@ -303,6 +304,8 @@ func (d *DB) UpdateSelection(ctx context.Context, e sq.ExecerContext, sel EventS
 	b := sq.Update("event_selection").SetMap(map[string]interface{}{
 		"winner":    sel.Winner,
 		"odds_away": sel.OddsAway,
+		"auto_odds": sel.AutoOdds,
+		"name":      sel.Name,
 		"odds_home": sel.OddsHome,
 	}).Where(sq.Eq{"uuid": sel.UUID})
 

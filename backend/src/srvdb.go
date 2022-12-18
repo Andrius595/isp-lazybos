@@ -308,6 +308,14 @@ func (a *serverDBAdapter) InsertEvent(ctx context.Context, ev bet.Event) error {
 	return tx.Commit()
 }
 
+func (a *serverDBAdapter) UpdateEvent(ctx context.Context, ev bet.Event) error {
+	return a.db.UpdateEvent(ctx, a.db.NoTX(), encodeEvent(ev))
+}
+
+func (a *serverDBAdapter) UpdateSelection(ctx context.Context, sel bet.EventSelection) error {
+	return a.db.UpdateSelection(ctx, a.db.NoTX(), encodeSelection(sel, sel.EventUUID))
+}
+
 func (a *serverDBAdapter) FetchEvents(ctx context.Context) ([]bet.Event, error) {
 	evs, err := a.db.FetchEvents(ctx, a.db.NoTX(), db.EventNotFinished())
 	if err != nil {
