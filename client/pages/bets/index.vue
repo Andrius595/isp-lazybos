@@ -18,8 +18,8 @@
             <td>{{ bet.stake }} Eur</td>
             <td>{{ formatDate(bet.timestamp) }}</td>
             <td>{{ bet.odds }}</td>
-            <td>{{ bet.status }}</td>
-            <td>{{ bet.selection.winner }}</td>
+            <td>{{ bet.status == "tbd" ? "To be determined" : bet.status }}</td>
+            <td>{{ bet.winner == "away" ? bet.event.away_team.name : bet.event.home_team.name }}</td>
           </tr>
         </tbody>
       </table>
