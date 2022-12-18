@@ -15,6 +15,26 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+type adminUser struct {
+	UUID          uuid.UUID `json:"uuid"`
+	Email         string    `json:"email"`
+	FirstName     string    `json:"first_name"`
+	LastName      string    `json:"last_name"`
+	EmailVerified bool      `json:"email_verified"`
+	Role          string    `json:"role"`
+}
+
+func adminUserView(u user.AdminUser) adminUser {
+	return adminUser{
+		UUID:          u.UUID,
+		Email:         u.Email,
+		FirstName:     u.FirstName,
+		LastName:      u.LastName,
+		EmailVerified: u.EmailVerified,
+		Role:          string(u.Role),
+	}
+}
+
 type newBetEvent struct {
 	Name       string `json:"name"`
 	Sport      string `json:"sport"`
@@ -198,17 +218,63 @@ func (w *newWithdrawal) validate() error {
 func (s *Server) adminRouter() http.Handler {
 	r := chi.NewRouter()
 
-	r.Use(s.sessions.Auth)
+	r.Post("/login", s.adminLogin)
 
-	r.Get("/bet-users", s.betUsers)
-	r.Get("/identity-verifications", s.identityVerifications)
-	r.Post("/finalize-identity-verification", s.authorizeAdmin(user.RoleUsers, "finalize-identity", s.finalizeIdentityVerification))
-	r.Post("/deposit", s.authorizeAdmin(user.RoleUsers, "deposit", s.createDeposit))
-	r.Post("/withdraw", s.authorizeAdmin(user.RoleUsers, "withdraw", s.createWithdrawal))
-	r.Post("/event", s.authorizeAdmin(user.RoleMatches, "create-event", s.createEvent))
-	r.Post("/resolve", s.authorizeAdmin(user.RoleMatches, "resolve-event", s.resolveEventSelection))
+	r.Group(func(r chi.Router) {
+		r.Use(s.sessions.Auth)
+		r.Get("/bet-users", s.betUsers)
+		r.Get("/identity-verifications", s.identityVerifications)
+		r.Post("/finalize-identity-verification", s.authorizeAdmin(user.RoleUsers, "finalize-identity", s.finalizeIdentityVerification))
+		r.Post("/deposit", s.authorizeAdmin(user.RoleUsers, "deposit", s.createDeposit))
+		r.Post("/withdraw", s.authorizeAdmin(user.RoleUsers, "withdraw", s.createWithdrawal))
+		r.Post("/event", s.authorizeAdmin(user.RoleMatches, "create-event", s.createEvent))
+		r.Post("/resolve", s.authorizeAdmin(user.RoleMatches, "resolve-event", s.resolveEventSelection))
+
+	})
 
 	return r
+}
+
+func (s *Server) adminLogin(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		respondErr(w, badRequestErr(err))
+		return
+	}
+
+	ctx := r.Context()
+	log := s.logger("loginAdmin")
+
+	u, ok, err := s.db.FetchAdminUserByEmail(ctx, input.Email)
+	if err != nil {
+		log.Error().Err(err).Msg("cannot fetch user")
+		respondErr(w, internalErr())
+
+		return
+	}
+
+	if !ok {
+		respondErr(w, notFoundErr())
+		return
+	}
+
+	if !u.Login(input.Password) {
+		respondErr(w, badRequestErr(errors.New("invalid password")))
+		return
+	}
+
+	if err = s.sessions.Init(w, r, u.UUID.String()); err != nil {
+		log.Error().Err(err).Msg("cannot initialize session")
+		respondErr(w, internalErr())
+
+		return
+	}
+
+	respondJSON(w, http.StatusOK, adminUserView(u))
 }
 
 func (s *Server) identityVerifications(w http.ResponseWriter, r *http.Request) {

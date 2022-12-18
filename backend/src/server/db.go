@@ -25,7 +25,8 @@ type UserDB interface {
 
 	FetchUserByUUID(context.Context, uuid.UUID) (user.User, bool, error)
 
-	FetchAdminUser(context.Context, uuid.UUID) (user.AdminUser, bool, error)
+	FetchAdminUserByUUID(context.Context, uuid.UUID) (user.AdminUser, bool, error)
+	FetchAdminUserByEmail(context.Context, string) (user.AdminUser, bool, error)
 
 	InsertBetUserIdentityVerification(context.Context, user.IdentityVerification) error
 	FetchIdentityVerification(context.Context, uuid.UUID) (user.IdentityVerification, bool, error)
@@ -51,5 +52,5 @@ type BetDB interface {
 }
 
 type AdminDB interface {
-	InsertActionLog(context.Context, user.AdminLog) error
+	InsertAdminLog(context.Context, user.AdminLog) error
 }

@@ -12,6 +12,13 @@ import (
 	"github.com/google/uuid"
 )
 
+type AdminLog struct {
+	UUID      uuid.UUID
+	AdminUUID uuid.UUID
+	Action    string
+	Timestamp time.Time
+}
+
 type BetUser struct {
 	User
 	IdentityVerified bool            `db:"betusr.identity_verified"`
@@ -110,13 +117,12 @@ func (d *DB) UpdateUser(ctx context.Context, e sq.ExecerContext, u User) error {
 func (d *DB) FetchBetUser(ctx context.Context, q sq.QueryerContext, c fetchUserCriteria) (BetUser, bool, error) {
 	b := sq.Select()
 
-	b = betUserQuery(userQuery(b, "usr"), "betusr").From("bet_user AS betusr").InnerJoin("user usr ON usr.uuid=betusr.user_uuid")
-
-	qr, _ := b.MustSql()
+	b = c(betUserQuery(userQuery(b, "usr"), "betusr").From("bet_user AS betusr").InnerJoin("user usr ON usr.uuid=betusr.user_uuid"), "usr")
+	qr, args := b.MustSql()
 
 	var bu BetUser
 
-	err := d.d.GetContext(ctx, &bu, qr)
+	err := d.d.GetContext(ctx, &bu, qr, args...)
 	switch err {
 	case nil:
 		return bu, true, nil
@@ -162,18 +168,18 @@ func (d *DB) FetchUser(ctx context.Context, q sq.QueryerContext, c fetchUserCrit
 	}
 }
 
-func (d *DB) FetchAdminUser(ctx context.Context, q sq.QueryerContext, id uuid.UUID) (AdminUser, bool, error) {
+func (d *DB) FetchAdminUser(ctx context.Context, q sq.QueryerContext, c fetchUserCriteria) (AdminUser, bool, error) {
 	b := sq.Select()
 
-	b = adminUserQuery(userQuery(b, "usr"), "admusr").From("admin_user AS admusr").InnerJoin("user usr ON usr.uuid=admusr.user_uuid").Where(sq.Eq{"usr.uuid": id})
+	b = c(adminUserQuery(userQuery(b, "usr"), "admusr").From("admin_user AS admusr").InnerJoin("user usr ON usr.uuid=admusr.user_uuid"), "usr")
 	qr, args := b.MustSql()
 
 	var adm AdminUser
 
-	err := d.d.GetContext(ctx, &adm, qr, args)
+	err := d.d.GetContext(ctx, &adm, qr, args...)
 	switch err {
 	case nil:
-		return adm, false, nil
+		return adm, true, nil
 	case sql.ErrNoRows:
 		return AdminUser{}, false, nil
 	default:
@@ -280,6 +286,18 @@ func (d *DB) FetchEmailVerification(ctx context.Context, q sq.QueryerContext, to
 	default:
 		return EmailVerification{}, false, err
 	}
+}
+
+func (d *DB) InsertAdminLog(ctx context.Context, e sq.ExecerContext, lg AdminLog) error {
+	b := sq.Insert("admin_log").SetMap(map[string]interface{}{
+		"uuid":       lg.UUID,
+		"admin_uuid": lg.AdminUUID,
+		"action":     lg.Action,
+		"timestamp":  lg.Timestamp,
+	})
+
+	_, err := sq.ExecContextWith(ctx, e, b)
+	return err
 }
 
 func column(prefix, name string) string {

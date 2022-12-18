@@ -337,6 +337,36 @@ func (a *serverDBAdapter) FetchSelection(ctx context.Context, id uuid.UUID) (bet
 	return decodeSelection(sel), true, nil
 }
 
+func (a *serverDBAdapter) FetchAdminUserByEmail(ctx context.Context, email string) (user.AdminUser, bool, error) {
+	u, ok, err := a.db.FetchAdminUser(ctx, a.db.NoTX(), db.FetchUserByEmail(email))
+	if err != nil {
+		return user.AdminUser{}, false, err
+	}
+
+	if !ok {
+		return user.AdminUser{}, false, nil
+	}
+
+	return decodeAdminUser(u), true, nil
+}
+
+func (a *serverDBAdapter) FetchAdminUserByUUID(ctx context.Context, id uuid.UUID) (user.AdminUser, bool, error) {
+	u, ok, err := a.db.FetchAdminUser(ctx, a.db.NoTX(), db.FetchUserByUUID(id))
+	if err != nil {
+		return user.AdminUser{}, false, err
+	}
+
+	if !ok {
+		return user.AdminUser{}, false, nil
+	}
+
+	return decodeAdminUser(u), true, nil
+}
+
+func (a *serverDBAdapter) InsertAdminLog(ctx context.Context, lg user.AdminLog) error {
+	return a.db.InsertAdminLog(ctx, a.db.NoTX(), encodeAdminLog(lg))
+}
+
 func fillEvent(ctx context.Context, db *db.DB, tx db.TX, ev db.Event) (bet.Event, error) {
 	home, ok, err := db.FetchTeamByUUID(ctx, tx, ev.HomeTeamUUID)
 	if err != nil {
@@ -398,6 +428,22 @@ func fillEvent(ctx context.Context, db *db.DB, tx db.TX, ev db.Event) (bet.Event
 		HomeTeam:   decodeTeam(home, decodedHome),
 		AwayTeam:   decodeTeam(away, decodedAway),
 	}, nil
+}
+
+func encodeAdminLog(lg user.AdminLog) db.AdminLog {
+	return db.AdminLog{
+		UUID:      lg.UUID,
+		AdminUUID: lg.AdminUUID,
+		Action:    lg.Action,
+		Timestamp: lg.Timestamp,
+	}
+}
+
+func decodeAdminUser(u db.AdminUser) user.AdminUser {
+	return user.AdminUser{
+		User: decodeUser(u.User),
+		Role: user.Role(u.Role),
+	}
 }
 
 func decodeUser(u db.User) user.User {

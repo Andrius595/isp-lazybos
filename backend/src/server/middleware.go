@@ -105,7 +105,7 @@ func (s *Server) authorizeAdmin(role user.Role, action string, hdl adminHandler)
 			return
 		}
 
-		adm, ok, err := s.db.FetchAdminUser(ctx, userUUID)
+		adm, ok, err := s.db.FetchAdminUserByUUID(ctx, userUUID)
 		if err != nil {
 			log.Error().Err(err).Msg("cannot fetch admin")
 			respondErr(w, internalErr())
@@ -119,13 +119,13 @@ func (s *Server) authorizeAdmin(role user.Role, action string, hdl adminHandler)
 		}
 
 		if !adm.Permit(role) {
-			respondErr(w, notFoundErr())
+			respondErr(w, unauthorizedErr())
 			return
 		}
 
 		lg := adm.Log(action)
 
-		if err := s.db.InsertActionLog(ctx, lg); err != nil {
+		if err := s.db.InsertAdminLog(ctx, lg); err != nil {
 			log.Error().Err(err).Msg("cannot insert action log")
 			respondErr(w, internalErr())
 

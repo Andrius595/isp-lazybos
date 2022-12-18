@@ -117,6 +117,25 @@ CREATE TABLE IF NOT EXISTS bet (
 	CONSTRAINT fk_user_id_user_user_uuid FOREIGN KEY(user_uuid) REFERENCES bet_user(user_uuid)
 );
 
+CREATE TABLE IF NOT EXISTS admin_log (
+	uuid TEXT PRIMARY KEY NOT NULL,
+	admin_uuid TEXT NOT NULL,
+	action TEXT NOT NULL,
+	timestamp TIMESTAMP NOT NULL,
+	
+	CONSTRAINT fk_admin_uuid_admin_user_uuid FOREIGN KEY(admin_uuid) REFERENCES admin_user(user_uuid)
+);
+
+INSERT INTO user (uuid, email, password_hash, first_name, last_name, email_verified) VALUES 
+	("da48b7a1-0ab0-4a07-aab8-f5b5202cb515", "users@isp.com", "$2a$10$tX.L9c.L2yUTZn9aMkf3oOkc4.1ExPzLU1wXBLMrDtbWOArHTuyRq", "Martynas", "Martinaitis", 1),
+	("05f296fb-075d-4011-8b13-134f070d72e5", "events@isp.com", "$2a$10$tX.L9c.L2yUTZn9aMkf3oOkc4.1ExPzLU1wXBLMrDtbWOArHTuyRq", "Adomas", "Adomaitis", 1),
+	("b9145a91-cdc3-4c6e-ac82-d29e909da516", "sales@isp.com", "$2a$10$tX.L9c.L2yUTZn9aMkf3oOkc4.1ExPzLU1wXBLMrDtbWOArHTuyRq", "Arunas", "Arunaitis", 1);
+
+INSERT INTO admin_user (user_uuid, role) VALUES 
+	("da48b7a1-0ab0-4a07-aab8-f5b5202cb515", "users"),
+	("05f296fb-075d-4011-8b13-134f070d72e5", "events"),
+	("b9145a91-cdc3-4c6e-ac82-d29e909da516", "sales");
+
 INSERT INTO sport VALUES ("football"), ("basketball");
 
 -- +migrate Down
