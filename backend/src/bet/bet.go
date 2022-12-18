@@ -23,6 +23,10 @@ type Bet struct {
 }
 
 func (b *Bet) Resolve(winner Winner) {
+	if winner == WinnerTBD {
+		return
+	}
+
 	if winner == b.SelectionWinner {
 		b.State = BetStateWon
 		return
