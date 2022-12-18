@@ -120,11 +120,14 @@ func (b *betDBAdapter) FetchEvent(ctx context.Context, uuid uuid.UUID) (bet.Even
 
 func encodeBet(b bet.Bet) db.Bet {
 	return db.Bet{
-		UUID:          b.UUID,
-		UserUUID:      b.UserUUID,
-		SelectionUUID: b.SelectionUUID,
-		Odds:          b.Odds,
-		State:         string(b.State),
+		UUID:            b.UUID,
+		UserUUID:        b.UserUUID,
+		SelectionUUID:   b.SelectionUUID,
+		Stake:           b.Stake,
+		Timestamp:       b.Timestamp,
+		SelectionWinner: string(b.SelectionWinner),
+		Odds:            b.Odds,
+		State:           string(b.State),
 	}
 }
 

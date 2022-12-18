@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 
 	"github.com/google/uuid"
@@ -67,6 +68,7 @@ func (b *better) Bet(ctx context.Context, bt *bet.Bet, u *user.BetUser) (BetResp
 		}, nil
 	}
 
+	fmt.Println("insert bet stae", bt.Stake)
 	if err := b.db.InsertBet(ctx, *bt, userCopy); err != nil {
 		return BetResponse{}, err
 	}
