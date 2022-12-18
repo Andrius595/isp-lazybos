@@ -12,8 +12,8 @@
           <td></td>
         </tr>
         </thead>
-        <tbody>
-        <tr v-for="(match, index) in matches" :key="index">
+        <tbody v-for="(match, index) in matches">
+        <tr v-if="!match.finished" :key="index">
           <td>{{ index }}</td>
           <td>{{ match.name }}</td>
           <td>{{ match.finished ? 'Finished' : 'In progress' }}</td>

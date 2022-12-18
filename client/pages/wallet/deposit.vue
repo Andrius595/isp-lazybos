@@ -3,7 +3,7 @@
     <AuthenticatedLayout>
       <h1>Deposit Money</h1>
       <div v-if="successMessage.length" class="text-success">{{ successMessage }}</div>
-      <div v-if="errorMessage.length" class="text-success">{{ errorMessage }}</div>
+      <div v-if="errorMessage.length" class="text-danger">{{ errorMessage }}</div>
       <div class="d-flex gap-2">
         <div class="w-100">
           <div class="mb-3">
@@ -76,7 +76,8 @@ async function handleDeposit() {
   }
 
   successMessage.value = 'Deposit was successful!'
-  users.value = response.data ?? []
+  //users.value = response.data ?? []
+  await fetchUsers()
 }
 
 watch(
