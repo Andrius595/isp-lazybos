@@ -20,7 +20,7 @@ const Routes = {
     RemoveConfirmation: 'admin-matches-remove-confirmation',
     EndConfirmation: 'admin-matches-end-confirmation',
     Create: 'admin-matches-create',
-    Edit: 'admin-matches-edit'
+    Edit: 'admin-matches-edit-id'
   },
   Bets: {
     List: 'bets',
