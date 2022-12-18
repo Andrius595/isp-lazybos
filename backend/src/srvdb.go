@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/ramasauskas/ispbet/autobet"
 	"github.com/ramasauskas/ispbet/bet"
 	"github.com/ramasauskas/ispbet/db"
 	"github.com/ramasauskas/ispbet/purse"
@@ -485,6 +486,19 @@ func (a *serverDBAdapter) InsertAutoReport(ctx context.Context, r report.AutoRep
 		Type:   string(r.Type),
 		SendTo: r.SendTo,
 	})
+}
+
+func (a *serverDBAdapter) InsertAutoBet(ctx context.Context, au autobet.AutoBet) error {
+	return a.db.InsertAutoBet(ctx, a.db.NoTX(), db.AutoBet{
+		UUID:            au.UUID,
+		HighRisk:        au.HighRisk,
+		UserUUID:        au.UserUUID,
+		BalanceFraction: au.BalanceFraction,
+	})
+}
+
+func (a *serverDBAdapter) DeleteAutoBet(ctx context.Context, id uuid.UUID) error {
+	return a.db.DeleteAutoBet(ctx, a.db.NoTX(), id)
 }
 
 func fillEvent(ctx context.Context, db *db.DB, tx db.TX, ev db.Event) (bet.Event, error) {

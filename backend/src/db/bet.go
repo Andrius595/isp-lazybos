@@ -3,12 +3,20 @@ package db
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 )
+
+type AutoBet struct {
+	UUID            uuid.UUID       `db:"ab.uuid"`
+	HighRisk        bool            `db:"ab.high_risk"`
+	UserUUID        uuid.UUID       `db:"ab.user_uuid"`
+	BalanceFraction decimal.Decimal `db:"ab.balance_fraction"`
+}
 
 type fetchEventCriteria func(b sq.SelectBuilder, prefix string) sq.SelectBuilder
 
@@ -281,6 +289,74 @@ func (d *DB) UpdateSelection(ctx context.Context, e sq.ExecerContext, sel EventS
 
 	_, err := sq.ExecContextWith(ctx, e, b)
 	return err
+}
+
+func (d *DB) FetchSelectionBest(ctx context.Context, highRisk bool) (EventSelection, bool, error) {
+	b := sq.Select()
+
+	asc := "DESC"
+	if !highRisk {
+		asc = "ASC"
+	}
+
+	orderBy := fmt.Sprintf("MAX(es.odds_away, es.odds_home) %s", asc)
+	b = selectionQuery(b, "es").From("event_selection AS es").OrderBy(orderBy).Limit(1)
+	qr, args := b.MustSql()
+
+	var sel EventSelection
+
+	err := d.d.GetContext(ctx, &sel, qr, &args)
+	switch err {
+	case nil:
+		return sel, true, nil
+	case sql.ErrNoRows:
+		return EventSelection{}, false, nil
+	default:
+		return EventSelection{}, false, err
+	}
+}
+
+func (d *DB) FetchAutoBets(ctx context.Context) ([]AutoBet, error) {
+	b := sq.Select()
+
+	b = autoBetQuery(b, "ab").From("auto_bet AS ab")
+	qr, args := b.MustSql()
+
+	var bb []AutoBet
+
+	if err := d.d.SelectContext(ctx, &bb, qr, args...); err != nil {
+		return nil, err
+	}
+
+	return bb, nil
+}
+
+func (d *DB) InsertAutoBet(ctx context.Context, e sq.ExecerContext, ab AutoBet) error {
+	b := sq.Insert("auto_bet").SetMap(map[string]interface{}{
+		"uuid":             ab.UUID,
+		"user_uuid":        ab.UserUUID,
+		"high_risk":        ab.HighRisk,
+		"balance_fraction": ab.BalanceFraction,
+	})
+
+	_, err := sq.ExecContextWith(ctx, e, b)
+	return err
+}
+
+func (d *DB) DeleteAutoBet(ctx context.Context, e sq.ExecerContext, id uuid.UUID) error {
+	b := sq.Delete("auto_bet").Where(sq.Eq{"uuid": id})
+
+	_, err := sq.ExecContextWith(ctx, e, b)
+	return err
+}
+
+func autoBetQuery(b sq.SelectBuilder, prefix string) sq.SelectBuilder {
+	return b.Columns(
+		column(prefix, "uuid"),
+		column(prefix, "high_risk"),
+		column(prefix, "user_uuid"),
+		column(prefix, "balance_fraction"),
+	)
 }
 
 func eventQuery(b sq.SelectBuilder, prefix string) sq.SelectBuilder {

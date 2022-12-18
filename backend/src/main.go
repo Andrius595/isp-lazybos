@@ -5,6 +5,7 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/ramasauskas/ispbet/autobet"
 	"github.com/ramasauskas/ispbet/autoreport"
 	"github.com/ramasauskas/ispbet/db"
 	"github.com/ramasauskas/ispbet/server"
@@ -51,6 +52,16 @@ func main() {
 	dummyEm := &dummyEmail{
 		log: log.With().Str("goroutine", "auto_report").Logger(),
 	}
+
+	autoBetDB := &autobetDB{
+		db: database,
+	}
+
+	autoWorker := autobet.NewWorker(autoBetDB, autoBetDB, log.With().Str("goroutine", "autobet").Logger())
+
+	go autoWorker.Work()
+
+	mainLog.Info().Msg("started auto better")
 
 	reportWorker := autoreport.NewWorker(reportDB, dummyEm, log.With().Str("goroutine", "email").Logger())
 	if err := reportWorker.Work(); err != nil {

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/ramasauskas/ispbet/autobet"
 	"github.com/ramasauskas/ispbet/bet"
 	"github.com/ramasauskas/ispbet/purse"
 	"github.com/ramasauskas/ispbet/report"
@@ -55,6 +56,9 @@ type BetDB interface {
 	FetchEvents(context.Context) ([]bet.Event, error)
 	FetchEvent(context.Context, uuid.UUID) (bet.Event, bool, error)
 	FetchUserBets(context.Context, uuid.UUID) ([]bet.Bet, error)
+
+	InsertAutoBet(context.Context, autobet.AutoBet) error
+	DeleteAutoBet(context.Context, uuid.UUID) error
 }
 
 type AdminDB interface {

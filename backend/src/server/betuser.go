@@ -9,10 +9,32 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"github.com/ramasauskas/ispbet/autobet"
 	"github.com/ramasauskas/ispbet/bet"
 	"github.com/ramasauskas/ispbet/user"
 	"github.com/shopspring/decimal"
 )
+
+type newAutoBet struct {
+	HighRisk        bool            `json:"high_risk"`
+	BalanceFraction decimal.Decimal `json:"balance_fraction"`
+}
+
+type autoBet struct {
+	UUID            uuid.UUID       `json:"uuid"`
+	HighRisk        bool            `json:"high_risk"`
+	UserUUID        uuid.UUID       `json:"user_uuid"`
+	BalanceFraction decimal.Decimal `json:"balance_fraction"`
+}
+
+func autoBetView(au autobet.AutoBet) autoBet {
+	return autoBet{
+		UUID:            au.UUID,
+		HighRisk:        au.HighRisk,
+		UserUUID:        au.UserUUID,
+		BalanceFraction: au.BalanceFraction,
+	}
+}
 
 type newUserBet struct {
 	SelectionUUID uuid.UUID       `json:"selection_uuid"`
@@ -157,6 +179,13 @@ func (s *Server) betUserRouter() http.Handler {
 		r.Get("/bets", s.withBetUser(s.bets))
 		r.Post("/identity-verification", s.withBetUser(s.createVerificationRequest))
 		r.Post("/bet", s.withBetUser(s.bet))
+	})
+
+	r.Route("/autobet", func(r chi.Router) {
+		r.Use(s.sessions.Auth)
+
+		r.Post("/", s.withBetUser(s.insertAutoBet))
+		r.Delete("/{uuid}", s.withBetUser(s.deleteAutoBet))
 	})
 
 	return r
@@ -408,6 +437,53 @@ func (s *Server) bets(w http.ResponseWriter, r *http.Request, u user.BetUser) {
 	}
 
 	respondJSON(w, http.StatusOK, betViews)
+}
+
+func (s *Server) insertAutoBet(w http.ResponseWriter, r *http.Request, u user.BetUser) {
+	var nb newAutoBet
+
+	if err := json.NewDecoder(r.Body).Decode(&nb); err != nil {
+		respondErr(w, badRequestErr(err))
+		return
+	}
+
+	au := autobet.AutoBet{
+		UUID:            uuid.New(),
+		HighRisk:        nb.HighRisk,
+		UserUUID:        u.UUID,
+		BalanceFraction: nb.BalanceFraction,
+	}
+
+	ctx := r.Context()
+	log := s.logger("insertAutoBet")
+
+	if err := s.db.InsertAutoBet(ctx, au); err != nil {
+		log.Error().Err(err).Msg("cannot insert auto bet")
+		respondErr(w, internalErr())
+
+		return
+	}
+
+	respondJSON(w, http.StatusCreated, autoBetView(au))
+}
+
+func (s *Server) deleteAutoBet(w http.ResponseWriter, r *http.Request, u user.BetUser) {
+	ctx := r.Context()
+	log := s.logger("deleteAutoBet")
+
+	id, err := uuid.Parse(chi.URLParamFromCtx(ctx, "uuid"))
+	if err != nil {
+		respondErr(w, badRequestErr(err))
+		return
+	}
+
+	if err := s.db.DeleteAutoBet(ctx, id); err != nil {
+		log.Error().Err(err).Msg("cannot delete auto bet")
+		respondErr(w, internalErr())
+		return
+	}
+
+	respondOK(w)
 }
 
 type BetResponse struct {

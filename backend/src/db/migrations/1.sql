@@ -6,7 +6,6 @@ CREATE TABLE IF NOT EXISTS user (
 	first_name TEXT NOT NULL,
 	last_name TEXT NOT NULL,
 	email_verified INTEGER NOT NULL,
-
 	CONSTRAINT uniq_email UNIQUE(email)
 );
 
@@ -132,6 +131,15 @@ CREATE TABLE IF NOT EXISTS auto_report (
 	uuid TEXT PRIMARY KEY NOT NULL,
 	report_type TEXT NOT NULL,
 	send_to TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS auto_bet (
+	uuid TEXT PRIMARY KEY NOT NULL,
+	high_risk BOOLEAN NOT NULL,
+	user_uuid TEXT NOT NULL,
+	balance_fraction NUMERIC NOT NULL,
+
+	CONSTRAINT fk_auto_bet_bet_user_user_uuid FOREIGN KEY(user_uuid) REFERENCES bet_user(user_uuid)
 );
 
 INSERT INTO user (uuid, email, password_hash, first_name, last_name, email_verified) VALUES 
