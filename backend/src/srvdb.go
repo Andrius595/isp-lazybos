@@ -780,6 +780,7 @@ func encodeSelection(sel bet.EventSelection, eventUUID uuid.UUID) db.EventSelect
 		EventUUID: eventUUID,
 		Name:      sel.Name,
 		OddsHome:  sel.OddsHome,
+		AutoOdds:  sel.AutoOdds,
 		OddsAway:  sel.OddsAway,
 		Winner:    string(sel.Winner),
 	}
@@ -787,11 +788,13 @@ func encodeSelection(sel bet.EventSelection, eventUUID uuid.UUID) db.EventSelect
 
 func decodeSelection(sel db.EventSelection) bet.EventSelection {
 	return bet.EventSelection{
-		UUID:     sel.UUID,
-		Name:     sel.Name,
-		OddsHome: sel.OddsHome,
-		OddsAway: sel.OddsAway,
-		Winner:   bet.Winner(sel.Winner),
+		UUID:      sel.UUID,
+		Name:      sel.Name,
+		OddsHome:  sel.OddsHome,
+		OddsAway:  sel.OddsAway,
+		EventUUID: sel.EventUUID,
+		AutoOdds:  sel.AutoOdds,
+		Winner:    bet.Winner(sel.Winner),
 	}
 }
 
