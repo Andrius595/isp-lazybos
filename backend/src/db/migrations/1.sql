@@ -135,7 +135,6 @@ INSERT INTO user (uuid, email, password_hash, first_name, last_name, email_verif
 
 INSERT INTO admin_user (user_uuid, role) VALUES 
 	("da48b7a1-0ab0-4a07-aab8-f5b5202cb515", "users"),
-	("05f296fb-075d-4011-8b13-134f070d72e5", "events"),
 	("05f296fb-075d-4011-8b13-134f070d72e5", "matches"),
 	("b9145a91-cdc3-4c6e-ac82-d29e909da516", "sales");
 
