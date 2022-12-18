@@ -11,7 +11,7 @@
               </div>
               <div v-if="match" class="card-body">
                 <label for="name">Match name</label>
-                <input type="text" name="name" :value="match.name" class="form-control mb-2">
+                <input type="text" name="name" v-model="match.name" class="form-control mb-2">
                 <label style="margin-top:1rem" for="outcomeselection">Select match outcome</label>
                 <select @change="handleSelectSelection" class="form-select form-select-sm" aria-label=".form-select-sm example">
                   <option value="" selected>Select outcome</option>
