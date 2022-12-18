@@ -18,6 +18,20 @@ func EventNotFinished() fetchEventCriteria {
 	}
 }
 
+type fetchBetCriteria func(b sq.SelectBuilder, prefix string) sq.SelectBuilder
+
+func UserBets(id uuid.UUID) fetchBetCriteria {
+	return func(b sq.SelectBuilder, prefix string) sq.SelectBuilder {
+		return b.Where(sq.Eq{columnPredicate(prefix, "user_uuid"): id})
+	}
+}
+
+func SelectionBets(id uuid.UUID) fetchBetCriteria {
+	return func(b sq.SelectBuilder, prefix string) sq.SelectBuilder {
+		return b.Where(sq.Eq{columnPredicate(prefix, "selection_uuid"): id})
+	}
+}
+
 type Bet struct {
 	UUID            uuid.UUID       `db:"bt.uuid"`
 	UserUUID        uuid.UUID       `db:"bt.user_uuid"`
@@ -223,10 +237,10 @@ func (d *DB) InsertBet(ctx context.Context, e sq.ExecerContext, bt Bet) error {
 	return err
 }
 
-func (d *DB) FetchBetsBySelection(ctx context.Context, q sq.QueryerContext, id uuid.UUID) ([]Bet, error) {
+func (d *DB) FetchBets(ctx context.Context, q sq.QueryerContext, c fetchBetCriteria) ([]Bet, error) {
 	b := sq.Select()
 
-	b = betQuery(b, "bt").From("bet AS bt").Where(sq.Eq{"bt.selection_uuid": id})
+	b = c(betQuery(b, "bt").From("bet AS bt"), "bt")
 	qr, args := b.MustSql()
 
 	var bb []Bet

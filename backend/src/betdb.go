@@ -31,7 +31,7 @@ func (b *betDBAdapter) FetchBetUserByUUID(ctx context.Context, uuid uuid.UUID) (
 }
 
 func (b *betDBAdapter) FetchBetsBySelection(ctx context.Context, uuid uuid.UUID) ([]bet.Bet, error) {
-	bets, err := b.db.FetchBetsBySelection(ctx, b.db.NoTX(), uuid)
+	bets, err := b.db.FetchBets(ctx, b.db.NoTX(), db.SelectionBets(uuid))
 	if err != nil {
 		return nil, err
 	}

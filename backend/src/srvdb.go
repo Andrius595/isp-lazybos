@@ -382,6 +382,39 @@ func (a *serverDBAdapter) FetchAdminLogs(ctx context.Context) ([]user.AdminLog, 
 	return ll, nil
 }
 
+func (a *serverDBAdapter) FetchUserBets(ctx context.Context, id uuid.UUID) ([]bet.Bet, error) {
+	bets, err := a.db.FetchBets(ctx, a.db.NoTX(), db.UserBets(id))
+	if err != nil {
+		return nil, err
+	}
+
+	var bb []bet.Bet
+
+	for _, b := range bets {
+		bb = append(bb, decodeBet(b))
+	}
+
+	return bb, nil
+}
+
+func (a *serverDBAdapter) FetchEvent(ctx context.Context, id uuid.UUID) (bet.Event, bool, error) {
+	ev, ok, err := a.db.FetchEvent(ctx, a.db.NoTX(), id)
+	if err != nil {
+		return bet.Event{}, false, err
+	}
+
+	if !ok {
+		return bet.Event{}, false, nil
+	}
+
+	filled, err := fillEvent(ctx, a.db, a.db.NoTX(), ev)
+	if err != nil {
+		return bet.Event{}, false, err
+	}
+
+	return filled, true, nil
+}
+
 func fillEvent(ctx context.Context, db *db.DB, tx db.TX, ev db.Event) (bet.Event, error) {
 	home, ok, err := db.FetchTeamByUUID(ctx, tx, ev.HomeTeamUUID)
 	if err != nil {

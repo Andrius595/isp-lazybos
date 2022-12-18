@@ -97,17 +97,21 @@ type betEvent struct {
 	AwayTeam   betEventTeam        `json:"away_team"`
 }
 
+func betEventSelectionView(s bet.EventSelection) betEventSelection {
+	return betEventSelection{
+		UUID:     s.UUID,
+		Name:     s.Name,
+		OddsHome: s.OddsHome,
+		OddsAway: s.OddsAway,
+		Winner:   s.Winner,
+	}
+}
+
 func betEventView(e bet.Event) betEvent {
 	var selections []betEventSelection
 
 	for _, s := range e.Selections {
-		selections = append(selections, betEventSelection{
-			UUID:     s.UUID,
-			Name:     s.Name,
-			OddsHome: s.OddsHome,
-			OddsAway: s.OddsAway,
-			Winner:   s.Winner,
-		})
+		selections = append(selections, betEventSelectionView(s))
 	}
 
 	var (
@@ -241,6 +245,7 @@ func (s *Server) adminRouter() http.Handler {
 		r.Get("/bet-users", s.betUsers)
 		r.Get("/admin-logs", s.adminLogs)
 		r.Get("/identity-verifications", s.identityVerifications)
+
 		r.Post("/finalize-identity-verification", s.authorizeAdmin(user.RoleUsers, "finalize-identity", s.finalizeIdentityVerification))
 		r.Post("/deposit", s.authorizeAdmin(user.RoleUsers, "deposit", s.createDeposit))
 		r.Post("/withdraw", s.authorizeAdmin(user.RoleUsers, "withdraw", s.createWithdrawal))
