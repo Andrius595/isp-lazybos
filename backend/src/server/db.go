@@ -55,6 +55,7 @@ type BetDB interface {
 	FetchSelection(context.Context, uuid.UUID) (bet.EventSelection, bool, error)
 	FetchEvents(context.Context) ([]bet.Event, error)
 	FetchEvent(context.Context, uuid.UUID) (bet.Event, bool, error)
+	FetchEventBySelection(context.Context, uuid.UUID) (bet.Event, bool, error)
 	FetchUserBets(context.Context, uuid.UUID) ([]bet.Bet, error)
 	UpdateSelection(context.Context, bet.EventSelection) error
 	UpdateEvent(context.Context, bet.Event) error

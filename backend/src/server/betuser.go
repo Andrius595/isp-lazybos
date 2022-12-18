@@ -389,7 +389,7 @@ func (s *Server) bet(w http.ResponseWriter, r *http.Request, u user.BetUser) {
 		b.Odds = sel.OddsHome
 	}
 
-	ev, ok, err := s.db.FetchEvent(ctx, sel.EventUUID)
+	ev, ok, err := s.db.FetchEventBySelection(ctx, sel.UUID)
 	if err != nil {
 		log.Error().Err(err).Msg("cannot fetch event")
 		respondErr(w, notFoundErr())

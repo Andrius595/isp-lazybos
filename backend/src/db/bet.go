@@ -152,11 +152,30 @@ func (d *DB) FetchEvent(ctx context.Context, q sq.QueryerContext, id uuid.UUID) 
 	b := sq.Select()
 
 	b = eventQuery(b, "betev").From("bet_event AS betev").Where(sq.Eq{"betev.uuid": id})
-	qr, _ := b.MustSql()
+	qr, args := b.MustSql()
 
 	var ee Event
 
-	err := d.d.GetContext(ctx, &ee, qr)
+	err := d.d.GetContext(ctx, &ee, qr, args...)
+	switch err {
+	case nil:
+		return ee, true, nil
+	case sql.ErrNoRows:
+		return Event{}, false, nil
+	default:
+		return Event{}, false, err
+	}
+}
+
+func (d *DB) FetchEventBySelection(ctx context.Context, q sq.QueryerContext, id uuid.UUID) (Event, bool, error) {
+	b := sq.Select()
+
+	b = eventQuery(b, "betev").From("bet_event AS betev").Join("event_selection se ON se.event_uuid=betev.uuid").Where(sq.Eq{"se.uuid": id})
+	qr, args := b.MustSql()
+
+	var ee Event
+
+	err := d.d.GetContext(ctx, &ee, qr, args...)
 	switch err {
 	case nil:
 		return ee, true, nil
@@ -186,11 +205,11 @@ func (d *DB) FetchSelections(ctx context.Context) ([]EventSelection, error) {
 	b := sq.Select()
 
 	b = selectionQuery(b, "es").From("event_selection AS es").Where(sq.Eq{"winner": "tbd"})
-	qr, _ := b.MustSql()
+	qr, args := b.MustSql()
 
 	var es []EventSelection
 
-	if err := d.d.SelectContext(ctx, &es, qr); err != nil {
+	if err := d.d.SelectContext(ctx, &es, qr, args...); err != nil {
 		return nil, err
 	}
 

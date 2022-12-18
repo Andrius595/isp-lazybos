@@ -427,6 +427,24 @@ func (a *serverDBAdapter) FetchEvent(ctx context.Context, id uuid.UUID) (bet.Eve
 	return filled, true, nil
 }
 
+func (a *serverDBAdapter) FetchEventBySelection(ctx context.Context, id uuid.UUID) (bet.Event, bool, error) {
+	ev, ok, err := a.db.FetchEventBySelection(ctx, a.db.NoTX(), id)
+	if err != nil {
+		return bet.Event{}, false, err
+	}
+
+	if !ok {
+		return bet.Event{}, false, nil
+	}
+
+	filled, err := fillEvent(ctx, a.db, a.db.NoTX(), ev)
+	if err != nil {
+		return bet.Event{}, false, err
+	}
+
+	return filled, true, nil
+}
+
 func (a *serverDBAdapter) FetchProfit(ctx context.Context, po server.ProfitOpts) (server.ProfitReport, error) {
 	pr, err := a.db.ProfitReport(ctx, db.ProfitOpts{
 		From: po.From,
