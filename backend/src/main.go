@@ -61,7 +61,7 @@ func main() {
 		db: database,
 	}
 
-	autoOddsWorker := newOddsWorker(autoOddsDB)
+	autoOddsWorker := newOddsWorker(autoOddsDB, log.With().Str("goroutine", "auto_odds").Logger())
 
 	go autoOddsWorker.work()
 

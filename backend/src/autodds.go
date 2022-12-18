@@ -6,23 +6,26 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/ramasauskas/ispbet/bet"
+	"github.com/rs/zerolog"
 	"github.com/shopspring/decimal"
 )
 
 type oddsWorker struct {
 	doneCh chan struct{}
 	db     OddsDB
+	log    zerolog.Logger
 }
 
-func newOddsWorker(db OddsDB) *oddsWorker {
+func newOddsWorker(db OddsDB, log zerolog.Logger) *oddsWorker {
 	return &oddsWorker{
 		doneCh: make(chan struct{}, 1),
 		db:     db,
+		log:    log,
 	}
 }
 
 func (o *oddsWorker) work() {
-	tick := time.NewTicker(time.Second * 3)
+	tick := time.NewTicker(time.Minute)
 
 	defer tick.Stop()
 
@@ -31,7 +34,7 @@ func (o *oddsWorker) work() {
 		case <-o.doneCh:
 			return
 		case <-tick.C:
-
+			o.updateOdds()
 		}
 	}
 }
@@ -54,6 +57,10 @@ func (o *oddsWorker) updateOdds() error {
 		bb, err := o.db.FetchBetsBySelection(context.Background(), s.UUID)
 		if err != nil {
 			return err
+		}
+
+		if len(bb) < 2 {
+			continue
 		}
 
 		var (
@@ -85,6 +92,8 @@ func (o *oddsWorker) updateOdds() error {
 		if err := o.db.UpdateSelection(context.Background(), s); err != nil {
 			return err
 		}
+
+		o.log.Info().Str("selection", s.Name).Msg("updated odds")
 	}
 
 	return nil
