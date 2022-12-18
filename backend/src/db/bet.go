@@ -185,7 +185,7 @@ func (d *DB) FetchSelectionsByEvent(ctx context.Context, q sq.QueryerContext, id
 func (d *DB) FetchSelections(ctx context.Context) ([]EventSelection, error) {
 	b := sq.Select()
 
-	b = selectionQuery(b, "es").From("event_selection AS es")
+	b = selectionQuery(b, "es").From("event_selection AS es").Where(sq.Eq{"winner": "tbd"})
 	qr, _ := b.MustSql()
 
 	var es []EventSelection
@@ -319,7 +319,7 @@ func (d *DB) FetchSelectionBest(ctx context.Context, highRisk bool) (EventSelect
 	}
 
 	orderBy := fmt.Sprintf("MAX(es.odds_away, es.odds_home) %s", asc)
-	b = selectionQuery(b, "es").From("event_selection AS es").OrderBy(orderBy).Limit(1)
+	b = selectionQuery(b, "es").From("event_selection AS es").OrderBy(orderBy).Limit(1).Where(sq.Eq{"es.winner": "tbd"})
 	qr, args := b.MustSql()
 
 	var sel EventSelection
