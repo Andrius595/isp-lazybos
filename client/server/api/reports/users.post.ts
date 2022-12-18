@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
 
     let response
     try {
-        const res = await useBackFetch(`admin/report/bets`, 'POST', body, headers )
+        const res = await useBackFetch(`admin/report/user-bets/${body.user_uuid}`, 'POST', body, headers )
 
         response = { status: true, data:  res._data}
     } catch(e) {
