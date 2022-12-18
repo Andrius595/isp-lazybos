@@ -741,8 +741,8 @@ func (s *Server) profitReport(w http.ResponseWriter, r *http.Request) {
 	log := s.logger("adminLog")
 
 	var input struct {
-		From time.Time
-		To   time.Time
+		From time.Time `json:"from"`
+		To   time.Time `json:"to"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
