@@ -84,6 +84,18 @@ func (be newBetEvent) validate() error {
 		return errors.New("home team has no players")
 	}
 
+	if be.BeginsAt.Before(time.Now()) {
+		return errors.New("begins at cannot be before now")
+	}
+
+	if len(be.Name) == 0 {
+		return errors.New("name not provided")
+	}
+
+	if len(be.Sport) == 0 {
+		return errors.New("sport not provided")
+	}
+
 	return nil
 }
 
@@ -677,6 +689,17 @@ func (s *Server) createAutoReport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if input.SendTo == "" {
+		respondErr(w, badRequestErr(errors.New("no send email provided")))
+		return
+	}
+
+	switch input.Type {
+	case "profit", "deposit":
+	default:
+		respondErr(w, badRequestErr(errors.New("type must be profit or debit")))
+	}
+
 	rep := report.AutoReport{
 		UUID:   uuid.New(),
 		Type:   report.ReportType(input.Type),
@@ -752,7 +775,7 @@ func (s *Server) admins(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var views []adminUser
+	views := make([]adminUser, 0)
 
 	for _, u := range uu {
 		views = append(views, adminUserView(u))
@@ -859,7 +882,7 @@ func (s *Server) betReport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var views []userBet
+	views := make([]userBet, 0)
 
 	for _, b := range bb {
 		sel, ok, err := s.db.FetchSelection(ctx, b.SelectionUUID)

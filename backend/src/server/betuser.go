@@ -20,6 +20,14 @@ type newAutoBet struct {
 	BalanceFraction decimal.Decimal `json:"balance_fraction"`
 }
 
+func (na newAutoBet) validate() error {
+	if na.BalanceFraction.LessThanOrEqual(decimal.Zero) || na.BalanceFraction.GreaterThan(decimal.NewFromFloat(1)) {
+		return errors.New("balance fraction must be between 0 and 1 ")
+	}
+
+	return nil
+}
+
 type autoBet struct {
 	UUID            uuid.UUID       `json:"uuid"`
 	HighRisk        bool            `json:"high_risk"`
@@ -40,6 +48,18 @@ type newUserBet struct {
 	SelectionUUID uuid.UUID       `json:"selection_uuid"`
 	Stake         decimal.Decimal `json:"stake"`
 	Winner        string          `json:"winner"`
+}
+
+func (nb newUserBet) validate() error {
+	if nb.SelectionUUID == uuid.Nil {
+		return errors.New("selection not provided")
+	}
+
+	if nb.Stake.LessThanOrEqual(decimal.Zero) {
+		return errors.New("stake cannot be less than or equal to 0")
+	}
+
+	return nil
 }
 
 type userBet struct {
@@ -332,6 +352,11 @@ func (s *Server) bet(w http.ResponseWriter, r *http.Request, u user.BetUser) {
 		return
 	}
 
+	if err := nb.validate(); err != nil {
+		respondErr(w, badRequestErr(err))
+		return
+	}
+
 	b := bet.Bet{
 		UUID:            uuid.New(),
 		UserUUID:        u.UUID,
@@ -465,6 +490,11 @@ func (s *Server) insertAutoBet(w http.ResponseWriter, r *http.Request, u user.Be
 	var nb newAutoBet
 
 	if err := json.NewDecoder(r.Body).Decode(&nb); err != nil {
+		respondErr(w, badRequestErr(err))
+		return
+	}
+
+	if err := nb.validate(); err != nil {
 		respondErr(w, badRequestErr(err))
 		return
 	}

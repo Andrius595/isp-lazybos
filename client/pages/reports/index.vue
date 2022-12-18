@@ -20,6 +20,11 @@
 import AuthenticatedLayout from "~/layouts/AuthenticatedLayout.vue";
 import Routes from "~/types/routes";
 import getRouteUrl from "~/utils/getRouteUrl";
+import {definePageMeta} from "#imports";
+
+definePageMeta({
+  middleware: 'sales-admin',
+})
 </script>
 
 <style scoped lang="scss">
