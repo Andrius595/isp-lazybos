@@ -256,11 +256,11 @@ func (s *Server) adminRouter() http.Handler {
 		r.Post("/resolve", s.authorizeAdmin(user.RoleMatches, "resolve-event", s.resolveEventSelection))
 
 		r.Route("/report", func(r chi.Router) {
-			r.Get("/profit", s.profitReport)
-			r.Get("/admins", s.admins)
-			r.Get("/admin-logs/{uuid}", s.adminLogs)
-			r.Get("/user-bets/{uuid}", s.userBets)
-			r.Get("/bets", s.betReport)
+			r.Post("/profit", s.profitReport)
+			r.Post("/admins", s.admins)
+			r.Post("/admin-logs/{uuid}", s.adminLogs)
+			r.Post("/user-bets/{uuid}", s.userBets)
+			r.Post("/bets", s.betReport)
 		})
 	})
 
