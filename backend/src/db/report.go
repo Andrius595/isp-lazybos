@@ -6,6 +6,7 @@ import (
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 )
 
@@ -15,7 +16,9 @@ type ProfitOpts struct {
 }
 
 type ProfitReport struct {
-	Amount decimal.Decimal
+	Profit decimal.Decimal
+	Loss   decimal.Decimal
+	Final  decimal.Decimal
 }
 
 func (d *DB) ProfitReport(ctx context.Context, opts ProfitOpts) (ProfitReport, error) {
@@ -34,7 +37,7 @@ func (d *DB) ProfitReport(ctx context.Context, opts ProfitOpts) (ProfitReport, e
 	case nil:
 	case sql.ErrNoRows:
 		return ProfitReport{
-			Amount: decimal.Zero,
+			Final: decimal.Zero,
 		}, nil
 	default:
 		return ProfitReport{}, err
@@ -57,13 +60,45 @@ func (d *DB) ProfitReport(ctx context.Context, opts ProfitOpts) (ProfitReport, e
 	case nil:
 	case sql.ErrNoRows:
 		return ProfitReport{
-			Amount: decimal.Zero,
+			Final: decimal.Zero,
 		}, nil
 	default:
 		return ProfitReport{}, err
 	}
 
 	return ProfitReport{
-		Amount: lost.Sub(won.Amount),
+		Profit: lost,
+		Loss:   won.Amount,
+		Final:  lost.Sub(won.Amount),
 	}, nil
+}
+
+func (d *DB) FetchAdmins(ctx context.Context) ([]AdminUser, error) {
+	b := sq.Select()
+
+	b = adminUserQuery(b, "admusr").From("admin_user AS admusr")
+	qr, args := b.MustSql()
+
+	var uu []AdminUser
+
+	if err := d.d.SelectContext(ctx, &uu, qr, args...); err != nil {
+		return nil, err
+	}
+
+	return uu, nil
+}
+
+func (d *DB) AdminLog(ctx context.Context, id uuid.UUID) ([]AdminLog, error) {
+	b := sq.Select()
+
+	b = adminLogQuery(b, "admlog").From("admin_log AS admlog").Where(sq.Eq{"admlog.admin_uuid": id})
+	qr, args := b.MustSql()
+
+	var ll []AdminLog
+
+	if err := d.d.SelectContext(ctx, &ll, qr, args...); err != nil {
+		return nil, err
+	}
+
+	return ll, nil
 }

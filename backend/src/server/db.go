@@ -66,6 +66,12 @@ type ProfitOpts struct {
 	To   time.Time
 }
 
+type ProfitReport struct {
+	Profit decimal.Decimal `json:"profit"`
+	Loss   decimal.Decimal `json:"loss"`
+	Final  decimal.Decimal `json:"final"`
+}
+
 type ReportDB interface {
-	FetchProfit(context.Context, ProfitOpts) (decimal.Decimal, error)
+	FetchProfit(context.Context, ProfitOpts) (ProfitReport, error)
 }

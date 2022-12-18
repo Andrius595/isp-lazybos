@@ -701,11 +701,7 @@ func (s *Server) profitReport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respondJSON(w, http.StatusOK, struct {
-		Profit decimal.Decimal `json:"profit"`
-	}{
-		Profit: profit,
-	})
+	respondJSON(w, http.StatusOK, profit)
 }
 
 type Resolver interface {
