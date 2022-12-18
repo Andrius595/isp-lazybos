@@ -752,7 +752,7 @@ func (s *Server) admins(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var views []adminUser
+	views := make([]adminUser, 0)
 
 	for _, u := range uu {
 		views = append(views, adminUserView(u))
@@ -859,7 +859,7 @@ func (s *Server) betReport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var views []userBet
+	views := make([]userBet, 0)
 
 	for _, b := range bb {
 		sel, ok, err := s.db.FetchSelection(ctx, b.SelectionUUID)
