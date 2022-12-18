@@ -1,6 +1,6 @@
 <template>
   <div>
-    <GuestLayout>
+    <AuthenticatedLayout>
       <h1 class="mb-4">Login</h1>
       <div class="d-flex justify-content-center">
         <form class="col-sm-12 col-lg-6">
@@ -22,15 +22,14 @@
         <button type="button" class="btn btn-primary btn-block mb-4" @click="handleLogin">Login</button>
       </form>
       </div>
-    </GuestLayout>
+    </AuthenticatedLayout>
   </div>
 </template>
 
 <script setup lang="ts">
-import GuestLayout from "~/layouts/GuestLayout.vue";
-import getRouteUrl from '~/utils/getRouteUrl'
 import Routes from "~/types/routes";
 import {definePageMeta} from "#imports";
+import AuthenticatedLayout from "~/layouts/AuthenticatedLayout.vue";
 
 const formData = ref({
   email: '',
@@ -53,7 +52,7 @@ async function handleLogin() {
     return
   }
 
-  return navigateTo(getRouteUrl(Routes.Main))
+  return navigateTo({ name: Routes.Main })
 }
 
 definePageMeta({

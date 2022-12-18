@@ -8,6 +8,11 @@
 
 <script setup lang="ts">
 import AuthenticatedLayout from "~/layouts/AuthenticatedLayout.vue";
+import {definePageMeta} from "#imports";
+
+definePageMeta({
+  middleware: 'logged-in',
+})
 </script>
 
 <style scoped lang="scss">

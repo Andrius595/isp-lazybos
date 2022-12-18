@@ -1,6 +1,6 @@
 <template>
   <div>
-    <GuestLayout>
+    <AuthenticatedLayout>
       <h1>Registration</h1>
       <div class="d-flex justify-content-center">
         <form class="col-sm-12 col-lg-6">
@@ -43,15 +43,15 @@
         </form>
       </div>
 
-    </GuestLayout>
+    </AuthenticatedLayout>
   </div>
 </template>
 
 <script setup lang="ts">
-import GuestLayout from "~/layouts/GuestLayout.vue";
 import getRouteUrl from "~/utils/getRouteUrl";
 import Routes from "~/types/routes";
 import {definePageMeta} from "#imports";
+import AuthenticatedLayout from "~/layouts/AuthenticatedLayout.vue";
 
 const formData = ref({
   email: '',
@@ -75,7 +75,7 @@ async function handleRegistration() {
     return
   }
 
-  return navigateTo(getRouteUrl(Routes.Auth.Login))
+  return navigateTo({ name: Routes.Auth.Login })
 }
 
 
