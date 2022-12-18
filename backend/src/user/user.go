@@ -87,6 +87,39 @@ func (bu *BetUser) Debit(amount decimal.Decimal) error {
 	return nil
 }
 
+type AdminLog struct {
+	UUID      uuid.UUID
+	AdminUUID uuid.UUID
+	Action    string
+	Timestamp time.Time
+}
+
+type Role string
+
+const (
+	RoleUsers   Role = "users"
+	RoleMatches Role = "matches"
+	RoleSales   Role = "sales"
+)
+
+type AdminUser struct {
+	User
+	Role
+}
+
+func (au AdminUser) Permit(r Role) bool {
+	return r == au.Role
+}
+
+func (au AdminUser) Log(act string) AdminLog {
+	return AdminLog{
+		UUID:      uuid.New(),
+		AdminUUID: au.UUID,
+		Action:    act,
+		Timestamp: time.Now(),
+	}
+}
+
 type IdentityVerificationStatus string
 
 const (

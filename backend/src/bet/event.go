@@ -27,13 +27,14 @@ func (w Winner) Validate() error {
 }
 
 func (w Winner) Finalized() bool {
-	return w == WinnerHome || w == WinnerAway
+	return w == WinnerHome || w == WinnerAway || w == WinnnerNone
 }
 
 const (
-	WinnerHome Winner = "home"
-	WinnerAway Winner = "away"
-	WinnerTBD  Winner = "tbd"
+	WinnerHome  Winner = "home"
+	WinnerAway  Winner = "away"
+	WinnnerNone Winner = "none"
+	WinnerTBD   Winner = "tbd"
 )
 
 type Team struct {
@@ -75,4 +76,16 @@ type EventSelection struct {
 	OddsHome  decimal.Decimal
 	OddsAway  decimal.Decimal
 	Winner    Winner
+}
+
+func (es EventSelection) WinnerOdds() decimal.Decimal {
+	if es.Winner == WinnerTBD || es.Winner == WinnnerNone {
+		return decimal.Zero
+	}
+
+	if es.Winner == WinnerHome {
+		return es.OddsHome
+	}
+
+	return es.OddsAway
 }

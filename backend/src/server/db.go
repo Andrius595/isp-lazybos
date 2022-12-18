@@ -2,11 +2,13 @@ package server
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/ramasauskas/ispbet/bet"
 	"github.com/ramasauskas/ispbet/purse"
 	"github.com/ramasauskas/ispbet/user"
+	"github.com/shopspring/decimal"
 )
 
 type DB interface {
@@ -14,6 +16,8 @@ type DB interface {
 	EmailVerificationDB
 	PurseDB
 	BetDB
+	AdminDB
+	ReportDB
 }
 
 type UserDB interface {
@@ -23,6 +27,9 @@ type UserDB interface {
 	InsertBetUser(context.Context, user.BetUser) error
 
 	FetchUserByUUID(context.Context, uuid.UUID) (user.User, bool, error)
+
+	FetchAdminUserByUUID(context.Context, uuid.UUID) (user.AdminUser, bool, error)
+	FetchAdminUserByEmail(context.Context, string) (user.AdminUser, bool, error)
 
 	InsertBetUserIdentityVerification(context.Context, user.IdentityVerification) error
 	FetchIdentityVerification(context.Context, uuid.UUID) (user.IdentityVerification, bool, error)
@@ -45,4 +52,28 @@ type BetDB interface {
 	InsertEvent(context.Context, bet.Event) error
 	FetchSelection(context.Context, uuid.UUID) (bet.EventSelection, bool, error)
 	FetchEvents(context.Context) ([]bet.Event, error)
+	FetchEvent(context.Context, uuid.UUID) (bet.Event, bool, error)
+	FetchUserBets(context.Context, uuid.UUID) ([]bet.Bet, error)
+}
+
+type AdminDB interface {
+	InsertAdminLog(context.Context, user.AdminLog) error
+	FetchAdminUsers(context.Context) ([]user.AdminUser, error)
+	FetchAdminsLogs(context.Context) ([]user.AdminLog, error)
+	FetchAdminLogs(context.Context, uuid.UUID) ([]user.AdminLog, error)
+}
+
+type ProfitOpts struct {
+	From time.Time
+	To   time.Time
+}
+
+type ProfitReport struct {
+	Profit decimal.Decimal `json:"profit"`
+	Loss   decimal.Decimal `json:"loss"`
+	Final  decimal.Decimal `json:"final"`
+}
+
+type ReportDB interface {
+	FetchProfit(context.Context, ProfitOpts) (ProfitReport, error)
 }

@@ -21,16 +21,24 @@ type newUserBet struct {
 }
 
 type userBet struct {
-	UUID          uuid.UUID       `json:"uuid"`
-	Stake         decimal.Decimal `json:"stake"`
-	SelectionUUID uuid.UUID       `json:"selection_uuid"`
+	UUID      uuid.UUID         `json:"uuid"`
+	Stake     decimal.Decimal   `json:"stake"`
+	Odds      decimal.Decimal   `json:"odds"`
+	State     string            `json:"status"`
+	Selection betEventSelection `json:"selection"`
+	Event     betEvent          `json:"event"`
+	Timestamp time.Time         `json:"timestamp"`
 }
 
-func userBetView(b bet.Bet) userBet {
+func userBetView(b bet.Bet, ev betEvent, sel betEventSelection) userBet {
 	return userBet{
-		UUID:          b.UUID,
-		Stake:         b.Stake,
-		SelectionUUID: b.SelectionUUID,
+		UUID:      b.UUID,
+		Stake:     b.Stake,
+		Odds:      b.Odds,
+		State:     string(b.State),
+		Event:     ev,
+		Selection: sel,
+		Timestamp: b.Timestamp,
 	}
 }
 
@@ -146,6 +154,7 @@ func (s *Server) betUserRouter() http.Handler {
 		r.Use(s.sessions.Auth)
 
 		r.Get("/me", s.withBetUser(s.betUserMe))
+		r.Get("/bets", s.withBetUser(s.bets))
 		r.Post("/identity-verification", s.withBetUser(s.createVerificationRequest))
 		r.Post("/bet", s.withBetUser(s.bet))
 	})
@@ -300,10 +309,46 @@ func (s *Server) bet(w http.ResponseWriter, r *http.Request, u user.BetUser) {
 		SelectionWinner: bet.Winner(nb.Winner),
 		Stake:           nb.Stake,
 		State:           bet.BetStateTBD,
+		Timestamp:       time.Now(),
 	}
 
 	ctx := r.Context()
 	log := s.logger("bet")
+
+	sel, ok, err := s.db.FetchSelection(ctx, b.SelectionUUID)
+	if err != nil {
+		log.Error().Err(err).Msg("canont fetch selection")
+		respondErr(w, internalErr())
+
+		return
+	}
+
+	if !ok {
+		respondErr(w, notFoundErr())
+		return
+	}
+
+	if b.SelectionWinner == bet.WinnerAway {
+		b.Odds = sel.OddsAway
+	} else if b.SelectionWinner == bet.WinnerHome {
+		b.Odds = sel.OddsHome
+	}
+
+	ev, ok, err := s.db.FetchEvent(ctx, sel.EventUUID)
+	if err != nil {
+		log.Error().Err(err).Msg("cannot fetch event")
+		respondErr(w, notFoundErr())
+
+		return
+	}
+
+	if !ok {
+		respondErr(w, notFoundErr())
+		return
+	}
+
+	evView := betEventView(ev)
+	selView := betEventSelectionView(sel)
 
 	resp, err := s.better.Bet(ctx, &b, &u)
 	if err != nil {
@@ -318,7 +363,51 @@ func (s *Server) bet(w http.ResponseWriter, r *http.Request, u user.BetUser) {
 		return
 	}
 
-	respondJSON(w, http.StatusCreated, userBetView(b))
+	respondJSON(w, http.StatusCreated, userBetView(b, evView, selView))
+}
+
+func (s *Server) bets(w http.ResponseWriter, r *http.Request, u user.BetUser) {
+	ctx := r.Context()
+	log := s.logger("bets")
+
+	bets, err := s.db.FetchUserBets(ctx, u.UUID)
+	if err != nil {
+		log.Error().Err(err).Msg("cannot fetch bets")
+		respondErr(w, internalErr())
+
+		return
+	}
+
+	betViews := make([]userBet, 0)
+
+	for _, b := range bets {
+		sel, ok, err := s.db.FetchSelection(ctx, b.SelectionUUID)
+		if err != nil {
+			log.Error().Err(err).Msg("cannot fetch event")
+			continue
+		}
+
+		if !ok {
+			continue
+		}
+
+		ev, ok, err := s.db.FetchEvent(ctx, sel.EventUUID)
+		if err != nil {
+			log.Error().Err(err).Msg("cannot fetch event")
+			respondErr(w, internalErr())
+
+			return
+		}
+
+		if !ok {
+			continue
+		}
+
+		betView := userBetView(b, betEventView(ev), betEventSelectionView(sel))
+		betViews = append(betViews, betView)
+	}
+
+	respondJSON(w, http.StatusOK, betViews)
 }
 
 type BetResponse struct {

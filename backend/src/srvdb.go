@@ -8,6 +8,7 @@ import (
 	"github.com/ramasauskas/ispbet/bet"
 	"github.com/ramasauskas/ispbet/db"
 	"github.com/ramasauskas/ispbet/purse"
+	"github.com/ramasauskas/ispbet/server"
 	"github.com/ramasauskas/ispbet/user"
 )
 
@@ -337,6 +338,130 @@ func (a *serverDBAdapter) FetchSelection(ctx context.Context, id uuid.UUID) (bet
 	return decodeSelection(sel), true, nil
 }
 
+func (a *serverDBAdapter) FetchAdminUserByEmail(ctx context.Context, email string) (user.AdminUser, bool, error) {
+	u, ok, err := a.db.FetchAdminUser(ctx, a.db.NoTX(), db.FetchUserByEmail(email))
+	if err != nil {
+		return user.AdminUser{}, false, err
+	}
+
+	if !ok {
+		return user.AdminUser{}, false, nil
+	}
+
+	return decodeAdminUser(u), true, nil
+}
+
+func (a *serverDBAdapter) FetchAdminUserByUUID(ctx context.Context, id uuid.UUID) (user.AdminUser, bool, error) {
+	u, ok, err := a.db.FetchAdminUser(ctx, a.db.NoTX(), db.FetchUserByUUID(id))
+	if err != nil {
+		return user.AdminUser{}, false, err
+	}
+
+	if !ok {
+		return user.AdminUser{}, false, nil
+	}
+
+	return decodeAdminUser(u), true, nil
+}
+
+func (a *serverDBAdapter) InsertAdminLog(ctx context.Context, lg user.AdminLog) error {
+	return a.db.InsertAdminLog(ctx, a.db.NoTX(), encodeAdminLog(lg))
+}
+
+func (a *serverDBAdapter) FetchAdminsLogs(ctx context.Context) ([]user.AdminLog, error) {
+	logs, err := a.db.FetchAdminsLogs(ctx, a.db.NoTX())
+	if err != nil {
+		return nil, err
+	}
+
+	var ll []user.AdminLog
+
+	for _, l := range logs {
+		ll = append(ll, decodeAdminLog(l))
+	}
+
+	return ll, nil
+}
+
+func (a *serverDBAdapter) FetchUserBets(ctx context.Context, id uuid.UUID) ([]bet.Bet, error) {
+	bets, err := a.db.FetchBets(ctx, a.db.NoTX(), db.UserBets(id))
+	if err != nil {
+		return nil, err
+	}
+
+	var bb []bet.Bet
+
+	for _, b := range bets {
+		bb = append(bb, decodeBet(b))
+	}
+
+	return bb, nil
+}
+
+func (a *serverDBAdapter) FetchEvent(ctx context.Context, id uuid.UUID) (bet.Event, bool, error) {
+	ev, ok, err := a.db.FetchEvent(ctx, a.db.NoTX(), id)
+	if err != nil {
+		return bet.Event{}, false, err
+	}
+
+	if !ok {
+		return bet.Event{}, false, nil
+	}
+
+	filled, err := fillEvent(ctx, a.db, a.db.NoTX(), ev)
+	if err != nil {
+		return bet.Event{}, false, err
+	}
+
+	return filled, true, nil
+}
+
+func (a *serverDBAdapter) FetchProfit(ctx context.Context, po server.ProfitOpts) (server.ProfitReport, error) {
+	pr, err := a.db.ProfitReport(ctx, db.ProfitOpts{
+		From: po.From,
+		To:   po.To,
+	})
+	if err != nil {
+		return server.ProfitReport{}, err
+	}
+
+	return server.ProfitReport{
+		Profit: pr.Profit,
+		Loss:   pr.Loss,
+		Final:  pr.Final,
+	}, nil
+}
+
+func (a *serverDBAdapter) FetchAdminLogs(ctx context.Context, id uuid.UUID) ([]user.AdminLog, error) {
+	ll, err := a.db.FetchAdminLog(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	var decoded []user.AdminLog
+
+	for _, l := range ll {
+		decoded = append(decoded, decodeAdminLog(l))
+	}
+
+	return decoded, nil
+}
+
+func (a *serverDBAdapter) FetchAdminUsers(ctx context.Context) ([]user.AdminUser, error) {
+	uu, err := a.db.FetchAdmins(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var decoded []user.AdminUser
+
+	for _, u := range uu {
+		decoded = append(decoded, decodeAdminUser(u))
+	}
+
+	return decoded, nil
+}
+
 func fillEvent(ctx context.Context, db *db.DB, tx db.TX, ev db.Event) (bet.Event, error) {
 	home, ok, err := db.FetchTeamByUUID(ctx, tx, ev.HomeTeamUUID)
 	if err != nil {
@@ -398,6 +523,31 @@ func fillEvent(ctx context.Context, db *db.DB, tx db.TX, ev db.Event) (bet.Event
 		HomeTeam:   decodeTeam(home, decodedHome),
 		AwayTeam:   decodeTeam(away, decodedAway),
 	}, nil
+}
+
+func encodeAdminLog(lg user.AdminLog) db.AdminLog {
+	return db.AdminLog{
+		UUID:      lg.UUID,
+		AdminUUID: lg.AdminUUID,
+		Action:    lg.Action,
+		Timestamp: lg.Timestamp,
+	}
+}
+
+func decodeAdminLog(lg db.AdminLog) user.AdminLog {
+	return user.AdminLog{
+		UUID:      lg.UUID,
+		AdminUUID: lg.AdminUUID,
+		Action:    lg.Action,
+		Timestamp: lg.Timestamp,
+	}
+}
+
+func decodeAdminUser(u db.AdminUser) user.AdminUser {
+	return user.AdminUser{
+		User: decodeUser(u.User),
+		Role: user.Role(u.Role),
+	}
 }
 
 func decodeUser(u db.User) user.User {

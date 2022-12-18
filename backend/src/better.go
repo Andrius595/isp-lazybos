@@ -108,6 +108,12 @@ func (b *better) ResolveEventSelection(ctx context.Context, sel bet.EventSelecti
 		bt.Resolve(sel.Winner)
 
 		if bt.State == bet.BetStateWon {
+			if err := u.Credit(bt.Stake.Mul(sel.WinnerOdds())); err != nil {
+				continue
+			}
+		}
+
+		if sel.Winner == bet.WinnnerNone {
 			if err := u.Credit(bt.Stake); err != nil {
 				continue
 			}

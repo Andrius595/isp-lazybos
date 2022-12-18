@@ -12,10 +12,22 @@ import (
 	"github.com/google/uuid"
 )
 
+type AdminLog struct {
+	UUID      uuid.UUID `db:"admlog.uuid"`
+	AdminUUID uuid.UUID `db:"admlog.admin_uuid"`
+	Action    string    `db:"admlog.action"`
+	Timestamp time.Time `db:"admlog.timestamp"`
+}
+
 type BetUser struct {
 	User
 	IdentityVerified bool            `db:"betusr.identity_verified"`
 	Balance          decimal.Decimal `db:"betusr.balance"`
+}
+
+type AdminUser struct {
+	User
+	Role string `db:"admusr.role"`
 }
 
 type User struct {
@@ -105,13 +117,12 @@ func (d *DB) UpdateUser(ctx context.Context, e sq.ExecerContext, u User) error {
 func (d *DB) FetchBetUser(ctx context.Context, q sq.QueryerContext, c fetchUserCriteria) (BetUser, bool, error) {
 	b := sq.Select()
 
-	b = betUserQuery(userQuery(b, "usr"), "betusr").From("bet_user AS betusr").InnerJoin("user usr ON usr.uuid=betusr.user_uuid")
-
-	qr, _ := b.MustSql()
+	b = c(betUserQuery(userQuery(b, "usr"), "betusr").From("bet_user AS betusr").InnerJoin("user usr ON usr.uuid=betusr.user_uuid"), "usr")
+	qr, args := b.MustSql()
 
 	var bu BetUser
 
-	err := d.d.GetContext(ctx, &bu, qr)
+	err := d.d.GetContext(ctx, &bu, qr, args...)
 	switch err {
 	case nil:
 		return bu, true, nil
@@ -154,6 +165,25 @@ func (d *DB) FetchUser(ctx context.Context, q sq.QueryerContext, c fetchUserCrit
 		return User{}, false, nil
 	default:
 		return User{}, false, err
+	}
+}
+
+func (d *DB) FetchAdminUser(ctx context.Context, q sq.QueryerContext, c fetchUserCriteria) (AdminUser, bool, error) {
+	b := sq.Select()
+
+	b = c(adminUserQuery(userQuery(b, "usr"), "admusr").From("admin_user AS admusr").InnerJoin("user usr ON usr.uuid=admusr.user_uuid"), "usr")
+	qr, args := b.MustSql()
+
+	var adm AdminUser
+
+	err := d.d.GetContext(ctx, &adm, qr, args...)
+	switch err {
+	case nil:
+		return adm, true, nil
+	case sql.ErrNoRows:
+		return AdminUser{}, false, nil
+	default:
+		return AdminUser{}, false, err
 	}
 }
 
@@ -258,12 +288,48 @@ func (d *DB) FetchEmailVerification(ctx context.Context, q sq.QueryerContext, to
 	}
 }
 
+func (d *DB) InsertAdminLog(ctx context.Context, e sq.ExecerContext, lg AdminLog) error {
+	b := sq.Insert("admin_log").SetMap(map[string]interface{}{
+		"uuid":       lg.UUID,
+		"admin_uuid": lg.AdminUUID,
+		"action":     lg.Action,
+		"timestamp":  lg.Timestamp,
+	})
+
+	_, err := sq.ExecContextWith(ctx, e, b)
+	return err
+}
+
+func (d *DB) FetchAdminsLogs(ctx context.Context, q sq.QueryerContext) ([]AdminLog, error) {
+	b := sq.Select()
+
+	b = adminLogQuery(b, "admlog").From("admin_log AS admlog")
+	qr, _ := b.MustSql()
+
+	var ll []AdminLog
+
+	if err := d.d.SelectContext(ctx, &ll, qr); err != nil {
+		return nil, err
+	}
+
+	return ll, nil
+}
+
 func column(prefix, name string) string {
 	return fmt.Sprintf("%s.%s AS `%s.%s`", prefix, name, prefix, name)
 }
 
 func columnPredicate(prefix, name string) string {
 	return fmt.Sprintf("%s.%s", prefix, name)
+}
+
+func adminLogQuery(b sq.SelectBuilder, prefix string) sq.SelectBuilder {
+	return b.Columns(
+		column(prefix, "uuid"),
+		column(prefix, "admin_uuid"),
+		column(prefix, "action"),
+		column(prefix, "timestamp"),
+	)
 }
 
 func userQuery(b sq.SelectBuilder, prefix string) sq.SelectBuilder {
@@ -293,6 +359,12 @@ func betUserQuery(b sq.SelectBuilder, prefix string) sq.SelectBuilder {
 	return b.Columns(
 		column(prefix, "identity_verified"),
 		column(prefix, "balance"),
+	)
+}
+
+func adminUserQuery(b sq.SelectBuilder, prefix string) sq.SelectBuilder {
+	return b.Columns(
+		column(prefix, "role"),
 	)
 }
 

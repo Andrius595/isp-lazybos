@@ -18,6 +18,12 @@ CREATE TABLE IF NOT EXISTS bet_user (
 	CONSTRAINT fk_bet_user_user_uuid_user FOREIGN KEY(user_uuid) REFERENCES user(uuid)
 );
 
+CREATE TABLE IF NOT EXISTS admin_user (
+	user_uuid TEXT PRIMARY KEY NOT NULL,
+	role TEXT NOT NULL,
+	CONSTRAINT fk_bet_user_user_uuid_user FOREIGN KEY(user_uuid) REFERENCES user(uuid)
+);
+
 CREATE TABLE IF NOT EXISTS identity_verification (
 	uuid TEXT PRIMARY KEY NOT NULL,
 	user_uuid TEXT NOT NULL,
@@ -103,13 +109,34 @@ CREATE TABLE IF NOT EXISTS bet (
 	uuid TEXT PRIMARY KEY NOT NULL,
 	user_uuid TEXT NOT NULL,
 	stake NUMERIC NOT NULL,
+	odds NUMERIC NOT NULL,
 	state TEXT NOT NULL,
 	selection_uuid TEXT NOT NULL,
 	selection_winner TEXT NOT NULL,
+	timestamp TIMESTAMP NOT NULL,
 
 	CONSTRAINT fk_bet_selection_uuid_bet_selection_uuid FOREIGN KEY(selection_uuid) REFERENCES event_selection(uuid),
 	CONSTRAINT fk_user_id_user_user_uuid FOREIGN KEY(user_uuid) REFERENCES bet_user(user_uuid)
 );
+
+CREATE TABLE IF NOT EXISTS admin_log (
+	uuid TEXT PRIMARY KEY NOT NULL,
+	admin_uuid TEXT NOT NULL,
+	action TEXT NOT NULL,
+	timestamp TIMESTAMP NOT NULL,
+	
+	CONSTRAINT fk_admin_uuid_admin_user_uuid FOREIGN KEY(admin_uuid) REFERENCES admin_user(user_uuid)
+);
+
+INSERT INTO user (uuid, email, password_hash, first_name, last_name, email_verified) VALUES 
+	("da48b7a1-0ab0-4a07-aab8-f5b5202cb515", "users@isp.com", "$2a$10$tX.L9c.L2yUTZn9aMkf3oOkc4.1ExPzLU1wXBLMrDtbWOArHTuyRq", "Martynas", "Martinaitis", 1),
+	("05f296fb-075d-4011-8b13-134f070d72e5", "events@isp.com", "$2a$10$tX.L9c.L2yUTZn9aMkf3oOkc4.1ExPzLU1wXBLMrDtbWOArHTuyRq", "Adomas", "Adomaitis", 1),
+	("b9145a91-cdc3-4c6e-ac82-d29e909da516", "sales@isp.com", "$2a$10$tX.L9c.L2yUTZn9aMkf3oOkc4.1ExPzLU1wXBLMrDtbWOArHTuyRq", "Arunas", "Arunaitis", 1);
+
+INSERT INTO admin_user (user_uuid, role) VALUES 
+	("da48b7a1-0ab0-4a07-aab8-f5b5202cb515", "users"),
+	("05f296fb-075d-4011-8b13-134f070d72e5", "events"),
+	("b9145a91-cdc3-4c6e-ac82-d29e909da516", "sales");
 
 INSERT INTO sport VALUES ("football"), ("basketball");
 

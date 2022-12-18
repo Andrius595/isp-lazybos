@@ -15,6 +15,42 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+type adminLog struct {
+	UUID      uuid.UUID `json:"uuid"`
+	AdminUUID uuid.UUID `json:"admin_uuid"`
+	Action    string    `json:"action"`
+	Timestamp time.Time `json:"timestamp"`
+}
+
+func adminLogView(l user.AdminLog) adminLog {
+	return adminLog{
+		UUID:      l.UUID,
+		AdminUUID: l.AdminUUID,
+		Action:    l.Action,
+		Timestamp: l.Timestamp,
+	}
+}
+
+type adminUser struct {
+	UUID          uuid.UUID `json:"uuid"`
+	Email         string    `json:"email"`
+	FirstName     string    `json:"first_name"`
+	LastName      string    `json:"last_name"`
+	EmailVerified bool      `json:"email_verified"`
+	Role          string    `json:"role"`
+}
+
+func adminUserView(u user.AdminUser) adminUser {
+	return adminUser{
+		UUID:          u.UUID,
+		Email:         u.Email,
+		FirstName:     u.FirstName,
+		LastName:      u.LastName,
+		EmailVerified: u.EmailVerified,
+		Role:          string(u.Role),
+	}
+}
+
 type newBetEvent struct {
 	Name       string `json:"name"`
 	Sport      string `json:"sport"`
@@ -61,17 +97,21 @@ type betEvent struct {
 	AwayTeam   betEventTeam        `json:"away_team"`
 }
 
+func betEventSelectionView(s bet.EventSelection) betEventSelection {
+	return betEventSelection{
+		UUID:     s.UUID,
+		Name:     s.Name,
+		OddsHome: s.OddsHome,
+		OddsAway: s.OddsAway,
+		Winner:   s.Winner,
+	}
+}
+
 func betEventView(e bet.Event) betEvent {
 	var selections []betEventSelection
 
 	for _, s := range e.Selections {
-		selections = append(selections, betEventSelection{
-			UUID:     s.UUID,
-			Name:     s.Name,
-			OddsHome: s.OddsHome,
-			OddsAway: s.OddsAway,
-			Winner:   s.Winner,
-		})
+		selections = append(selections, betEventSelectionView(s))
 	}
 
 	var (
@@ -198,15 +238,70 @@ func (w *newWithdrawal) validate() error {
 func (s *Server) adminRouter() http.Handler {
 	r := chi.NewRouter()
 
-	r.Get("/bet-users", s.betUsers)
-	r.Get("/identity-verifications", s.identityVerifications)
-	r.Post("/finalize-identity-verification", s.finalizeIdentityVerification)
-	r.Post("/deposit", s.createDeposit)
-	r.Post("/withdraw", s.createWithdrawal)
-	r.Post("/event", s.createEvent)
-	r.Post("/resolve", s.resolveEventSelection)
+	r.Post("/login", s.adminLogin)
+
+	r.Group(func(r chi.Router) {
+		r.Use(s.sessions.Auth)
+		r.Get("/bet-users", s.betUsers)
+		//r.Get("/admin-logs", s.adminsLogs)
+		r.Get("/identity-verifications", s.identityVerifications)
+
+		r.Post("/finalize-identity-verification", s.authorizeAdmin(user.RoleUsers, "finalize-identity", s.finalizeIdentityVerification))
+		r.Post("/deposit", s.authorizeAdmin(user.RoleUsers, "deposit", s.createDeposit))
+		r.Post("/withdraw", s.authorizeAdmin(user.RoleUsers, "withdraw", s.createWithdrawal))
+		r.Post("/event", s.authorizeAdmin(user.RoleMatches, "create-event", s.createEvent))
+		r.Post("/resolve", s.authorizeAdmin(user.RoleMatches, "resolve-event", s.resolveEventSelection))
+
+		r.Route("/report", func(r chi.Router) {
+			r.Get("/profit", s.profitReport)
+			r.Get("/admins", s.admins)
+			r.Get("/admin-logs/{uuid}", s.adminLogs)
+		})
+	})
 
 	return r
+}
+
+func (s *Server) adminLogin(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		respondErr(w, badRequestErr(err))
+		return
+	}
+
+	ctx := r.Context()
+	log := s.logger("loginAdmin")
+
+	u, ok, err := s.db.FetchAdminUserByEmail(ctx, input.Email)
+	if err != nil {
+		log.Error().Err(err).Msg("cannot fetch user")
+		respondErr(w, internalErr())
+
+		return
+	}
+
+	if !ok {
+		respondErr(w, notFoundErr())
+		return
+	}
+
+	if !u.Login(input.Password) {
+		respondErr(w, badRequestErr(errors.New("invalid password")))
+		return
+	}
+
+	if err = s.sessions.Init(w, r, u.UUID.String()); err != nil {
+		log.Error().Err(err).Msg("cannot initialize session")
+		respondErr(w, internalErr())
+
+		return
+	}
+
+	respondJSON(w, http.StatusOK, adminUserView(u))
 }
 
 func (s *Server) identityVerifications(w http.ResponseWriter, r *http.Request) {
@@ -251,7 +346,7 @@ func (s *Server) identityVerifications(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusOK, verViews)
 }
 
-func (s *Server) finalizeIdentityVerification(w http.ResponseWriter, r *http.Request) {
+func (s *Server) finalizeIdentityVerification(w http.ResponseWriter, r *http.Request, _ user.AdminUser) {
 	var input struct {
 		VerificationUUID uuid.UUID `json:"verification_uuid"`
 		Accept           bool      `json:"accept"`
@@ -333,7 +428,7 @@ func (s *Server) betUsers(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusOK, uuView)
 }
 
-func (s *Server) createDeposit(w http.ResponseWriter, r *http.Request) {
+func (s *Server) createDeposit(w http.ResponseWriter, r *http.Request, _ user.AdminUser) {
 	var nd newDeposit
 
 	if err := json.NewDecoder(r.Body).Decode(&nd); err != nil {
@@ -384,7 +479,7 @@ func (s *Server) createDeposit(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusCreated, depositView(d))
 }
 
-func (s *Server) createWithdrawal(w http.ResponseWriter, r *http.Request) {
+func (s *Server) createWithdrawal(w http.ResponseWriter, r *http.Request, _ user.AdminUser) {
 	var nw newWithdrawal
 
 	if err := json.NewDecoder(r.Body).Decode(&nw); err != nil {
@@ -435,7 +530,7 @@ func (s *Server) createWithdrawal(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusCreated, withdrawalView(wd))
 }
 
-func (s *Server) createEvent(w http.ResponseWriter, r *http.Request) {
+func (s *Server) createEvent(w http.ResponseWriter, r *http.Request, _ user.AdminUser) {
 	var newEvent newBetEvent
 
 	if err := json.NewDecoder(r.Body).Decode(&newEvent); err != nil {
@@ -509,7 +604,7 @@ func (s *Server) createEvent(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusOK, betEventView(ev))
 }
 
-func (s *Server) resolveEventSelection(w http.ResponseWriter, r *http.Request) {
+func (s *Server) resolveEventSelection(w http.ResponseWriter, r *http.Request, _ user.AdminUser) {
 	var input struct {
 		SelectionUUID uuid.UUID  `json:"selection_uuid"`
 		Winner        bet.Winner `json:"winner"`
@@ -517,6 +612,16 @@ func (s *Server) resolveEventSelection(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		respondErr(w, badRequestErr(err))
+		return
+	}
+
+	if err := input.Winner.Validate(); err != nil {
+		respondErr(w, badRequestErr(err))
+		return
+	}
+
+	if input.Winner == bet.WinnerTBD {
+		respondErr(w, badRequestErr(errors.New("winner cannot be tbd")))
 		return
 	}
 
@@ -551,6 +656,100 @@ func (s *Server) resolveEventSelection(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondOK(w)
+}
+
+func (s *Server) adminsLogs(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	log := s.logger("adminsLog")
+
+	ll, err := s.db.FetchAdminsLogs(ctx)
+	if err != nil {
+		log.Error().Err(err).Msg("cannot fetch admin logs")
+		respondErr(w, internalErr())
+		return
+	}
+
+	views := make([]adminLog, 0)
+
+	for _, l := range ll {
+		views = append(views, adminLogView(l))
+	}
+
+	respondJSON(w, http.StatusOK, views)
+}
+
+func (s *Server) profitReport(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	log := s.logger("adminLog")
+
+	var input struct {
+		From time.Time
+		To   time.Time
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		respondErr(w, badRequestErr(err))
+		return
+	}
+
+	profit, err := s.db.FetchProfit(ctx, ProfitOpts{
+		From: input.From,
+		To:   input.To,
+	})
+	if err != nil {
+		log.Error().Err(err).Msg("cannot fetch profit report")
+		respondErr(w, internalErr())
+
+		return
+	}
+
+	respondJSON(w, http.StatusOK, profit)
+}
+
+func (s *Server) admins(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	log := s.logger("admins")
+
+	uu, err := s.db.FetchAdminUsers(ctx)
+	if err != nil {
+		log.Error().Err(err).Msg("cannot fetch admin users")
+		respondErr(w, internalErr())
+		return
+	}
+
+	var views []adminUser
+
+	for _, u := range uu {
+		views = append(views, adminUserView(u))
+	}
+
+	respondJSON(w, http.StatusOK, views)
+}
+
+func (s *Server) adminLogs(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	log := s.logger("adminLogs")
+
+	id, err := uuid.Parse(chi.URLParamFromCtx(ctx, "uuid"))
+	if err != nil {
+		respondErr(w, badRequestErr(err))
+		return
+	}
+
+	ll, err := s.db.FetchAdminLogs(ctx, id)
+	if err != nil {
+		log.Error().Err(err).Msg("cannot fetch admin logs")
+		respondErr(w, internalErr())
+		return
+	}
+
+	views := make([]adminLog, 0)
+
+	for _, l := range ll {
+		views = append(views, adminLogView(l))
+	}
+
+	respondJSON(w, http.StatusOK, views)
 }
 
 type Resolver interface {
