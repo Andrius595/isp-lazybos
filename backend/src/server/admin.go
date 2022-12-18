@@ -136,6 +136,7 @@ func betEventSelectionView(s bet.EventSelection) betEventSelection {
 		OddsHome: s.OddsHome,
 		OddsAway: s.OddsAway,
 		Winner:   s.Winner,
+		AutoOdds: s.AutoOdds,
 	}
 }
 
@@ -206,6 +207,7 @@ type betEventSelection struct {
 	Name     string          `json:"name"`
 	OddsHome decimal.Decimal `json:"odds_home"`
 	OddsAway decimal.Decimal `json:"odds_away"`
+	AutoOdds bool            `json:"auto_ods"`
 	Winner   bet.Winner      `json:"winner"`
 }
 
