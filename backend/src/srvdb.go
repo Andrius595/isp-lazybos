@@ -368,8 +368,8 @@ func (a *serverDBAdapter) InsertAdminLog(ctx context.Context, lg user.AdminLog) 
 	return a.db.InsertAdminLog(ctx, a.db.NoTX(), encodeAdminLog(lg))
 }
 
-func (a *serverDBAdapter) FetchAdminLogs(ctx context.Context) ([]user.AdminLog, error) {
-	logs, err := a.db.FetchAdminLogs(ctx, a.db.NoTX())
+func (a *serverDBAdapter) FetchAdminsLogs(ctx context.Context) ([]user.AdminLog, error) {
+	logs, err := a.db.FetchAdminsLogs(ctx, a.db.NoTX())
 	if err != nil {
 		return nil, err
 	}
@@ -430,6 +430,36 @@ func (a *serverDBAdapter) FetchProfit(ctx context.Context, po server.ProfitOpts)
 		Loss:   pr.Loss,
 		Final:  pr.Final,
 	}, nil
+}
+
+func (a *serverDBAdapter) FetchAdminLogs(ctx context.Context, id uuid.UUID) ([]user.AdminLog, error) {
+	ll, err := a.db.FetchAdminLog(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	var decoded []user.AdminLog
+
+	for _, l := range ll {
+		decoded = append(decoded, decodeAdminLog(l))
+	}
+
+	return decoded, nil
+}
+
+func (a *serverDBAdapter) FetchAdminUsers(ctx context.Context) ([]user.AdminUser, error) {
+	uu, err := a.db.FetchAdmins(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var decoded []user.AdminUser
+
+	for _, u := range uu {
+		decoded = append(decoded, decodeAdminUser(u))
+	}
+
+	return decoded, nil
 }
 
 func fillEvent(ctx context.Context, db *db.DB, tx db.TX, ev db.Event) (bet.Event, error) {

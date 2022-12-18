@@ -243,7 +243,7 @@ func (s *Server) adminRouter() http.Handler {
 	r.Group(func(r chi.Router) {
 		r.Use(s.sessions.Auth)
 		r.Get("/bet-users", s.betUsers)
-		r.Get("/admin-logs", s.adminLogs)
+		//r.Get("/admin-logs", s.adminsLogs)
 		r.Get("/identity-verifications", s.identityVerifications)
 
 		r.Post("/finalize-identity-verification", s.authorizeAdmin(user.RoleUsers, "finalize-identity", s.finalizeIdentityVerification))
@@ -254,6 +254,8 @@ func (s *Server) adminRouter() http.Handler {
 
 		r.Route("/report", func(r chi.Router) {
 			r.Get("/profit", s.profitReport)
+			r.Get("/admins", s.admins)
+			r.Get("/admin-logs/{uuid}", s.adminLogs)
 		})
 	})
 
@@ -656,11 +658,11 @@ func (s *Server) resolveEventSelection(w http.ResponseWriter, r *http.Request, _
 	respondOK(w)
 }
 
-func (s *Server) adminLogs(w http.ResponseWriter, r *http.Request) {
+func (s *Server) adminsLogs(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	log := s.logger("adminLog")
+	log := s.logger("adminsLog")
 
-	ll, err := s.db.FetchAdminLogs(ctx)
+	ll, err := s.db.FetchAdminsLogs(ctx)
 	if err != nil {
 		log.Error().Err(err).Msg("cannot fetch admin logs")
 		respondErr(w, internalErr())
@@ -702,6 +704,52 @@ func (s *Server) profitReport(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondJSON(w, http.StatusOK, profit)
+}
+
+func (s *Server) admins(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	log := s.logger("admins")
+
+	uu, err := s.db.FetchAdminUsers(ctx)
+	if err != nil {
+		log.Error().Err(err).Msg("cannot fetch admin users")
+		respondErr(w, internalErr())
+		return
+	}
+
+	var views []adminUser
+
+	for _, u := range uu {
+		views = append(views, adminUserView(u))
+	}
+
+	respondJSON(w, http.StatusOK, views)
+}
+
+func (s *Server) adminLogs(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	log := s.logger("adminLogs")
+
+	id, err := uuid.Parse(chi.URLParamFromCtx(ctx, "uuid"))
+	if err != nil {
+		respondErr(w, badRequestErr(err))
+		return
+	}
+
+	ll, err := s.db.FetchAdminLogs(ctx, id)
+	if err != nil {
+		log.Error().Err(err).Msg("cannot fetch admin logs")
+		respondErr(w, internalErr())
+		return
+	}
+
+	views := make([]adminLog, 0)
+
+	for _, l := range ll {
+		views = append(views, adminLogView(l))
+	}
+
+	respondJSON(w, http.StatusOK, views)
 }
 
 type Resolver interface {

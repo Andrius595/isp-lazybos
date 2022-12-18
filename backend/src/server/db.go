@@ -58,7 +58,9 @@ type BetDB interface {
 
 type AdminDB interface {
 	InsertAdminLog(context.Context, user.AdminLog) error
-	FetchAdminLogs(context.Context) ([]user.AdminLog, error)
+	FetchAdminUsers(context.Context) ([]user.AdminUser, error)
+	FetchAdminsLogs(context.Context) ([]user.AdminLog, error)
+	FetchAdminLogs(context.Context, uuid.UUID) ([]user.AdminLog, error)
 }
 
 type ProfitOpts struct {

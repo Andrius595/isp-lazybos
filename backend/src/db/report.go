@@ -76,7 +76,7 @@ func (d *DB) ProfitReport(ctx context.Context, opts ProfitOpts) (ProfitReport, e
 func (d *DB) FetchAdmins(ctx context.Context) ([]AdminUser, error) {
 	b := sq.Select()
 
-	b = adminUserQuery(b, "admusr").From("admin_user AS admusr")
+	b = adminUserQuery(userQuery(b, "usr"), "admusr").From("admin_user AS admusr").InnerJoin("user usr ON usr.uuid=admusr.user_uuid")
 	qr, args := b.MustSql()
 
 	var uu []AdminUser
@@ -88,7 +88,7 @@ func (d *DB) FetchAdmins(ctx context.Context) ([]AdminUser, error) {
 	return uu, nil
 }
 
-func (d *DB) AdminLog(ctx context.Context, id uuid.UUID) ([]AdminLog, error) {
+func (d *DB) FetchAdminLog(ctx context.Context, id uuid.UUID) ([]AdminLog, error) {
 	b := sq.Select()
 
 	b = adminLogQuery(b, "admlog").From("admin_log AS admlog").Where(sq.Eq{"admlog.admin_uuid": id})

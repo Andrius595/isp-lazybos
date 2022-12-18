@@ -300,7 +300,7 @@ func (d *DB) InsertAdminLog(ctx context.Context, e sq.ExecerContext, lg AdminLog
 	return err
 }
 
-func (d *DB) FetchAdminLogs(ctx context.Context, q sq.QueryerContext) ([]AdminLog, error) {
+func (d *DB) FetchAdminsLogs(ctx context.Context, q sq.QueryerContext) ([]AdminLog, error) {
 	b := sq.Select()
 
 	b = adminLogQuery(b, "admlog").From("admin_log AS admlog")
