@@ -54,15 +54,25 @@ type Event struct {
 	Selections []EventSelection
 	Sport      Sport
 	BeginsAt   time.Time
-	Finished   bool
 	HomeTeam   Team
 	AwayTeam   Team
 }
 
+func (e Event) Finished() bool {
+	for _, s := range e.Selections {
+		if !s.Winner.Finalized() {
+			return false
+		}
+	}
+
+	return true
+}
+
 type EventSelection struct {
-	UUID     uuid.UUID
-	Name     string
-	OddsHome decimal.Decimal
-	OddsAway decimal.Decimal
-	Winner   Winner
+	UUID      uuid.UUID
+	EventUUID uuid.UUID
+	Name      string
+	OddsHome  decimal.Decimal
+	OddsAway  decimal.Decimal
+	Winner    Winner
 }

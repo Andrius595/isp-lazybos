@@ -35,7 +35,7 @@ func main() {
 		db: database,
 	}
 
-	better := better{
+	better := &better{
 		db: betDBAdapter,
 	}
 
