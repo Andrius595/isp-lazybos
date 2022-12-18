@@ -75,6 +75,7 @@ type EventSelection struct {
 	Name      string
 	OddsHome  decimal.Decimal
 	OddsAway  decimal.Decimal
+	AutoOdds  bool
 	Winner    Winner
 }
 

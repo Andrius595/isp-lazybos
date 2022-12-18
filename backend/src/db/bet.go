@@ -67,6 +67,7 @@ type EventSelection struct {
 	Name      string          `db:"es.name"`
 	OddsHome  decimal.Decimal `db:"es.odds_home"`
 	OddsAway  decimal.Decimal `db:"es.odds_away"`
+	AutoOdds  bool            `db:"es.auto_odds"`
 	Winner    string          `db:"es.winner"`
 }
 
@@ -102,6 +103,7 @@ func (d *DB) InsertEventSelection(ctx context.Context, e sq.ExecerContext, se Ev
 		"name":       se.Name,
 		"odds_home":  se.OddsHome,
 		"odds_away":  se.OddsAway,
+		"auto_odds":  se.AutoOdds,
 		"winner":     se.Winner,
 		"event_uuid": se.EventUUID,
 	})
@@ -178,6 +180,21 @@ func (d *DB) FetchSelectionsByEvent(ctx context.Context, q sq.QueryerContext, id
 	}
 
 	return ss, nil
+}
+
+func (d *DB) FetchSelections(ctx context.Context) ([]EventSelection, error) {
+	b := sq.Select()
+
+	b = selectionQuery(b, "es").From("event_selection AS es")
+	qr, _ := b.MustSql()
+
+	var es []EventSelection
+
+	if err := d.d.SelectContext(ctx, &es, qr); err != nil {
+		return nil, err
+	}
+
+	return es, nil
 }
 
 func (d *DB) FetchSelectionByUUID(ctx context.Context, q sq.QueryerContext, id uuid.UUID) (EventSelection, bool, error) {
@@ -284,7 +301,9 @@ func (d *DB) UpdateEvent(ctx context.Context, e sq.ExecerContext, ev Event) erro
 
 func (d *DB) UpdateSelection(ctx context.Context, e sq.ExecerContext, sel EventSelection) error {
 	b := sq.Update("event_selection").SetMap(map[string]interface{}{
-		"winner": sel.Winner,
+		"winner":    sel.Winner,
+		"odds_away": sel.OddsAway,
+		"odds_home": sel.OddsHome,
 	}).Where(sq.Eq{"uuid": sel.UUID})
 
 	_, err := sq.ExecContextWith(ctx, e, b)
@@ -376,6 +395,7 @@ func selectionQuery(b sq.SelectBuilder, prefix string) sq.SelectBuilder {
 		column(prefix, "uuid"),
 		column(prefix, "name"),
 		column(prefix, "odds_home"),
+		column(prefix, "auto_odds"),
 		column(prefix, "odds_away"),
 		column(prefix, "winner"),
 		column(prefix, "event_uuid"),

@@ -57,6 +57,16 @@ func main() {
 		db: database,
 	}
 
+	autoOddsDB := &autoOddsDB{
+		db: database,
+	}
+
+	autoOddsWorker := newOddsWorker(autoOddsDB)
+
+	go autoOddsWorker.work()
+
+	mainLog.Info().Msg("started auto odds worker")
+
 	autoWorker := autobet.NewWorker(autoBetDB, autoBetDB, log.With().Str("goroutine", "autobet").Logger())
 
 	go autoWorker.Work()
@@ -107,6 +117,10 @@ func main() {
 	reportWorker.Close()
 
 	mainLog.Info().Msg("stopped report worker")
+
+	autoOddsWorker.stop()
+
+	mainLog.Info().Msg("stopped auto odds worker")
 
 	mainLog.Info().Msg("application gracefully closed")
 }

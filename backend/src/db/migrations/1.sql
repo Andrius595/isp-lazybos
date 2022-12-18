@@ -81,6 +81,7 @@ CREATE TABLE IF NOT EXISTS event_selection (
 	name TEXT NOT NULL,
 	odds_home NUMERIC NOT NULL,
 	odds_away NUMERIC NOT NULL,
+	auto_odds BOOLEAN NOT NULL,
 	winner TEXT NOT NULL,
 	event_uuid TEXT NOT NULL,
 
