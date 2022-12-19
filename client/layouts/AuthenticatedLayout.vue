@@ -50,7 +50,6 @@
               <span class="nav-link">Logout</span>
             </li>
           </ul>
-
         </div>
       </div>
     </nav>
@@ -70,7 +69,7 @@ const user = computed(() => (useCookie('user')).value)
 
 const isGuest = computed(() => !user.value)
 const isUser = computed(() => checkUserRole(user.value, 'user'))
-const isUserVerified = computed(() => isUser.value && user.value.indentity_verified)
+const isUserVerified = computed(() => isUser.value && user.value.identitity_verified)
 const isUsersAdmin = computed(() => checkUserRole(user.value, 'users'))
 const isMatchesAdmin = computed(() => checkUserRole(user.value, 'matches'))
 const isSalesAdmin = computed(() => checkUserRole(user.value, 'sales'))
