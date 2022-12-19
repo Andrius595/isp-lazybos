@@ -35,7 +35,7 @@ func NewWorker(db DB, better Better, log zerolog.Logger) *Worker {
 }
 
 func (w *Worker) Work() {
-	ticker := time.NewTicker(time.Second * 10)
+	ticker := time.NewTicker(time.Minute)
 	defer ticker.Stop()
 
 	for {
@@ -73,7 +73,7 @@ func (w *Worker) process() error {
 		}
 
 		amn := u.Balance.Mul(a.BalanceFraction)
-		if amn.LessThan(decimal.New(1, 1)) {
+		if amn.LessThan(decimal.New(1, 0)) {
 			continue
 		}
 
@@ -89,7 +89,12 @@ func (w *Worker) process() error {
 		mx := bet.WinnerHome
 		mxOdds := sel.OddsHome
 
-		if sel.OddsAway.LessThan(sel.OddsHome) {
+		if !a.HighRisk && sel.OddsAway.LessThan(sel.OddsHome) {
+			mx = bet.WinnerAway
+			mxOdds = sel.OddsAway
+		}
+
+		if a.HighRisk && sel.OddsAway.GreaterThan(sel.OddsAway) {
 			mx = bet.WinnerAway
 			mxOdds = sel.OddsAway
 		}
@@ -108,6 +113,8 @@ func (w *Worker) process() error {
 		if err := w.better.Bet(context.Background(), &b, &u); err != nil {
 			return err
 		}
+
+		w.log.Info().Msg("placed bet")
 	}
 
 	return nil

@@ -54,7 +54,8 @@ func main() {
 	}
 
 	autoBetDB := &autobetDB{
-		db: database,
+		db:  database,
+		bet: better,
 	}
 
 	autoOddsDB := &autoOddsDB{

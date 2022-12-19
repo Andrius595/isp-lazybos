@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -335,18 +334,17 @@ func (d *DB) UpdateSelection(ctx context.Context, e sq.ExecerContext, sel EventS
 func (d *DB) FetchSelectionBest(ctx context.Context, highRisk bool) (EventSelection, bool, error) {
 	b := sq.Select()
 
-	asc := "DESC"
+	asc := "MAX(es.odds_away, es.odds_home) DESC"
 	if !highRisk {
-		asc = "ASC"
+		asc = "MIN(es.odds_away, es.odds_home) ASC"
 	}
 
-	orderBy := fmt.Sprintf("MAX(es.odds_away, es.odds_home) %s", asc)
-	b = selectionQuery(b, "es").From("event_selection AS es").OrderBy(orderBy).Limit(1).Where(sq.Eq{"es.winner": "tbd"})
+	b = selectionQuery(b, "es").From("event_selection AS es").OrderBy(asc).Limit(1).Where(sq.Eq{"es.winner": "tbd"})
 	qr, args := b.MustSql()
 
 	var sel EventSelection
 
-	err := d.d.GetContext(ctx, &sel, qr, &args)
+	err := d.d.GetContext(ctx, &sel, qr, args...)
 	switch err {
 	case nil:
 		return sel, true, nil
