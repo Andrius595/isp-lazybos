@@ -9,6 +9,7 @@
               <div class="card-title text-black">
                 <h5 class="text-center py-2 font-weight-bold mb-0 mt-2">Match creation</h5>
               </div>
+              <div v-if="matchErrorMessage.length" class="text-danger">{{ matchErrorMessage }}</div>
               <div class="card-body">
                 <label>Match name</label>
                 <input v-model="matchForm.name" type="text" placeholder="" class="form-control mb-3">
@@ -46,6 +47,7 @@
                     <li v-for="(outcome, index) in outcomes" :key="index" class="list-group-item">{{ outcome.name }}</li>
                   </ul>
                 </div>
+                <div v-if="showOutcomeErrorMessage.length" class="text-danger">{{ showOutcomeErrorMessage }}</div>
                 <button class="btn btn-success btn-block mt-3" @click="handleCreateMatch">Create match</button>
               </div>
             </div>
@@ -53,6 +55,7 @@
               <div class="card-title text-black">
                 <h5 class="text-center py-2 font-weight-bold mb-0 mt-2">Team creation</h5>
               </div>
+              <div v-if="teamErrorMessage.length" class="text-danger">{{ teamErrorMessage }}</div>
               <div class="card-body">
                 <ul class="nav nav-tabs" id="myTab" role="tablist">
                   <li class="nav-item" role="presentation">
@@ -73,6 +76,7 @@
                     <label>Team's league</label>
                     <input v-model="homeTeamForm.league" type="text" placeholder="" class="form-control mb-2">
                     <hr />
+                    <div v-if="playerErrorMessage.length" class="text-danger">{{ playerErrorMessage }}</div>
                     <label>Player's name</label>
                     <input v-model="homePlayerForm.first_name" type="text" placeholder="" class="form-control mb-2">
                     <label>Player's last name</label>
@@ -97,6 +101,7 @@
                     <label>Team's league</label>
                     <input v-model="awayTeamForm.league" type="text" placeholder="" class="form-control mb-2">
                     <hr />
+                    <div v-if="playerErrorMessage.length" class="text-danger">{{ playerErrorMessage }}</div>
                     <label>Player's name</label>
                     <input v-model="awayPlayerForm.first_name" type="text" placeholder="" class="form-control mb-2">
                     <label>Player's last name</label>
@@ -127,7 +132,6 @@
 import AuthenticatedLayout from "~/layouts/AuthenticatedLayout.vue";
 import Routes from "~/types/routes";
 
-const autoCoff = ref<boolean>(false)
 const isShowingOutcome = ref<boolean>(false)
 
 const sportsOptions = ['football', 'basketball']
@@ -159,7 +163,8 @@ function addOutcome() {
   outcomeForm.value = {...emptyOutcomeForm}
 }
 
-
+const showOutcomeErrorMessage = ref('')
+const matchErrorMessage = ref('')
 const teamErrorMessage = ref('')
 const emptyTeamForm = {
   name: '',
@@ -197,8 +202,6 @@ function addHomePlayer() {
 
   homeTeamForm.value.players = [ ...homeTeamForm.value.players, {...homePlayerForm.value}]
   homePlayerForm.value = {...emptyPlayerForm}
-
-  console.log(homeTeamForm.value, awayTeamForm.value)
 }
 
 function addAwayPlayer() {
@@ -225,8 +228,46 @@ function handleSportSelect(event) {
 }
 
 async function handleCreateMatch() {
+  showOutcomeErrorMessage.value = ''
+  teamErrorMessage.value = ''
+  matchErrorMessage.value = ''
+  playerErrorMessage.value = ''
+
+  if (!outcomes.value.length) {
+    showOutcomeErrorMessage.value = "Create at least one outcome"
+
+    return
+  }
+  if (
+      !homeTeamForm.value.players.length ||
+      !awayTeamForm.value.players.length
+  ) {
+    playerErrorMessage.value = 'Teams must have at least one player'
+
+    return
+  }
+  if (
+      !homeTeamForm.value.name.length ||
+      !awayTeamForm.value.name.length ||
+      !homeTeamForm.value.country.length ||
+      !awayTeamForm.value.country.length ||
+      !homeTeamForm.value.league.length ||
+      !awayTeamForm.value.league.length
+  ) {
+    teamErrorMessage.value = 'Data in teams forms is missing'
+
+    return
+  }
+
+  if (
+      !matchForm.value.name.length ||
+      !matchForm.value.begins_at.length
+  ) {
+    matchErrorMessage.value = 'Data is missing in match form'
+
+    return
+  }
   const date = new Date(matchForm.value.begins_at).toISOString()
-  console.log('date', date)
   const body = {
     ...matchForm.value,
     begins_at: date,
@@ -237,8 +278,6 @@ async function handleCreateMatch() {
 
   body.home_team.players = body.home_team.players.map((player) => `${player.first_name} ${player.last_name}`)
   body.away_team.players = body.away_team.players.map((player) => `${player.first_name} ${player.last_name}`)
-
-  console.log(body)
 
   const response = await $fetch('/api/events/create', { method: 'POST', body })
 
