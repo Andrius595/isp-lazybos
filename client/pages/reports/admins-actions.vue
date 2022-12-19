@@ -27,7 +27,7 @@
               </thead>
               <tbody class="table-secondary">
                 <tr v-for="(action, index) in actions" :key="index">
-                  <td>{{ action.timestamp}}</td>
+                  <td>{{ formatDate(action.timestamp)}}</td>
                   <td>{{ action.action}}</td>
                 </tr>
               </tbody>
@@ -42,6 +42,7 @@
 
 <script setup lang="ts">
 import AuthenticatedLayout from "~/layouts/AuthenticatedLayout.vue";
+import formatDate from "~/utils/formatDate";
 
 const actions = ref([])
 
