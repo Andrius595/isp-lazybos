@@ -14,7 +14,7 @@
             <li v-if="isUsersAdmin" class="nav-item">
               <NuxtLink class="nav-link" :class="{ active: isRouteActive(Routes.Identity.List)}" :href="getRouteUrl(Routes.Identity.List)">Identity Verifications</NuxtLink>
             </li>
-            <li v-if="isUser" class="nav-item">
+            <li v-if="isUserVerified" class="nav-item">
               <NuxtLink class="nav-link" :class="{ active: isRouteActive(Routes.Matches.List)}" :href="getRouteUrl(Routes.Matches.List)">Matches</NuxtLink>
             </li>
             <li v-if="isMatchesAdmin" class="nav-item">
@@ -23,13 +23,13 @@
             <li v-if="isMatchesAdmin" class="nav-item">
               <NuxtLink class="nav-link" :class="{ active: isRouteActive(Routes.AdminMatches.Create)}" :href="getRouteUrl(Routes.AdminMatches.Create)">Create Match</NuxtLink>
             </li>
-            <li v-if="isUser" class="nav-item">
+            <li v-if="isUserVerified" class="nav-item">
               <NuxtLink class="nav-link" :class="{ active: isRouteActive(Routes.Bets.List)}" :href="getRouteUrl(Routes.Bets.List)">Bets</NuxtLink>
             </li>
             <li v-if="isUsersAdmin" class="nav-item">
               <NuxtLink class="nav-link" :class="{ active: isRouteActive(Routes.Wallet.Deposit)}" :href="getRouteUrl(Routes.Wallet.Deposit)">Deposit</NuxtLink>
             </li>
-            <li v-if="isUser" class="nav-item">
+            <li v-if="isUserVerified" class="nav-item">
               <NuxtLink class="nav-link" :class="{ active: isRouteActive(Routes.AutomaticBets.List)}" :href="getRouteUrl(Routes.AutomaticBets.List)">Automatic Bets</NuxtLink>
             </li>
             <li v-if="isUsersAdmin" class="nav-item">
@@ -70,6 +70,7 @@ const user = computed(() => (useCookie('user')).value)
 
 const isGuest = computed(() => !user.value)
 const isUser = computed(() => checkUserRole(user.value, 'user'))
+const isUserVerified = computed(() => isUser.value && user.value.indentity_verified)
 const isUsersAdmin = computed(() => checkUserRole(user.value, 'users'))
 const isMatchesAdmin = computed(() => checkUserRole(user.value, 'matches'))
 const isSalesAdmin = computed(() => checkUserRole(user.value, 'sales'))
